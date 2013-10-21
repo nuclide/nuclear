@@ -39,8 +39,8 @@ wayland_add_protocol_server(SOURCES
     input-method
 )
 
-add_library(orbital-shell SHARED ${SOURCES})
-set_target_properties(orbital-shell PROPERTIES PREFIX "")
-set_target_properties(orbital-shell PROPERTIES COMPILE_DEFINITIONS WL_HIDE_DEPRECATED=1)
+add_library(nuclear-shell SHARED ${SOURCES})
+set_target_properties(nuclear-shell PROPERTIES PREFIX "")
+set_target_properties(nuclear-shell PROPERTIES COMPILE_DEFINITIONS WL_HIDE_DEPRECATED=1)
 
-install(TARGETS orbital-shell DESTINATION lib/orbital)
+install(TARGETS nuclear-shell DESTINATION lib/nuclear-shell)

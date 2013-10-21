@@ -1021,7 +1021,7 @@ module_init(struct weston_compositor *ec, int *argc, char *argv[])
     char *client = nullptr;
 
     for (int i = 0; i < *argc; ++i) {
-        if (char *s = strstr(argv[i], "--orbital-client=")) {
+        if (char *s = strstr(argv[i], "--nuclear-client=")) {
             client = strdup(s + 17);
             --*argc;
             break;

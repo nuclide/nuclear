@@ -18,7 +18,7 @@
 #include "workspace.h"
 #include "shell.h"
 #include "shellsurface.h"
-#include "nuclear-desktop-shell-server-protocol.h"
+#include "wayland-desktop-shell-server-protocol.h"
 #include "utils.h"
 
 Workspace::Workspace(Shell *shell, int number)

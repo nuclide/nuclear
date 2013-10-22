@@ -10,8 +10,8 @@ find_package(PkgConfig "0.22" REQUIRED)
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
 
-add_subdirectory(protocol)
 add_subdirectory(src)
+add_subdirectory(protocol)
 
 # uninstall target
 configure_file("${CMAKE_SOURCE_DIR}/cmake/cmake_uninstall.cmake.in" "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake" IMMEDIATE @ONLY)

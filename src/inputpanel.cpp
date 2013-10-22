@@ -20,7 +20,7 @@
 #include <wayland-server.h>
 
 #include "inputpanel.h"
-#include "weston-input-method-server-protocol.h"
+#include "wayland-input-method-server-protocol.h"
 
 InputPanel::InputPanel(wl_display *display)
 {

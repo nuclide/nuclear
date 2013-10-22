@@ -9,6 +9,7 @@ include_directories(
     ${Pixman_INCLUDE_DIRS}
     ${Weston_INCLUDE_DIRS}
     ${CMAKE_CURRENT_SOURCE_DIR}/effects
+    ${CMAKE_BINARY_DIR}/protocol
 )
 
 set(SOURCES
@@ -28,16 +29,6 @@ set(SOURCES
     effects/fademovingeffect.cpp
     effects/inoutsurfaceeffect.cpp
     effects/minimizeeffect.cpp)
-
-wayland_add_protocol_server(SOURCES
-    ${CMAKE_SOURCE_DIR}/protocol/desktop-shell.xml
-    desktop-shell
-)
-
-wayland_add_protocol_server(SOURCES
-    ${CMAKE_SOURCE_DIR}/protocol/input-method.xml
-    input-method
-)
 
 add_library(nuclear-shell SHARED ${SOURCES})
 set_target_properties(nuclear-shell PROPERTIES PREFIX "")

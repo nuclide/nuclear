@@ -24,7 +24,7 @@
 #include "animationcurve.h"
 #include "shellseat.h"
 
-#include "wayland-desktop-shell-server-protocol.h"
+#include "nuclear-desktop-shell-server-protocol.h"
 
 const float INACTIVE_ALPHA = 0.8;
 const int ALPHA_ANIM_DURATION = 200;

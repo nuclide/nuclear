@@ -26,7 +26,7 @@
 // #include <weston/config-parser.h>
 
 #include "desktop-shell.h"
-#include "wayland-desktop-shell-server-protocol.h"
+#include "nuclear-desktop-shell-server-protocol.h"
 #include "shellsurface.h"
 
 #include "scaleeffect.h"

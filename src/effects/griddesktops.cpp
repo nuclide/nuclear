@@ -24,7 +24,7 @@
 #include "workspace.h"
 #include "transform.h"
 
-#include "wayland-desktop-shell-server-protocol.h"
+#include "nuclear-desktop-shell-server-protocol.h"
 
 struct Grab : public ShellGrab {
     void button(uint32_t time, uint32_t button, uint32_t state) override

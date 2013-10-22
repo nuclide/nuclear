@@ -27,7 +27,7 @@
 #include "shellseat.h"
 #include "workspace.h"
 
-#include "wayland-desktop-shell-server-protocol.h"
+#include "nuclear-desktop-shell-server-protocol.h"
 
 ShellSurface::ShellSurface(Shell *shell, struct weston_surface *surface)
             : m_shell(shell)

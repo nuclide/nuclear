@@ -265,6 +265,10 @@ void DesktopShell::panelConfigure(weston_surface *es, int32_t sx, int32_t sy, in
 {
     Shell::panelConfigure(es, sx, sy, width, height, pos);
 
+    if (width == 0) {
+        return;
+    }
+
     IRect2D rect = windowsArea(es->output);
     for (Output &out: m_outputs) {
         if (out.output == es->output && out.rect != rect) {

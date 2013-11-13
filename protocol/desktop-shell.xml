@@ -13,6 +13,7 @@
     </request>
 
     <request name="set_panel">
+      <arg name="id" type="new_id" interface="desktop_shell_panel"/>
       <arg name="output" type="object" interface="wl_output"/>
       <arg name="surface" type="object" interface="wl_surface"/>
       <arg name="position" type="uint"/>
@@ -225,6 +226,16 @@
 
   <interface name="desktop_shell_surface" version="1">
       <event name="popup_close"/>
+  </interface>
+
+  <interface name="desktop_shell_panel" version="1">
+      <request name="move"/>
+      <request name="set_position">
+          <arg name="position" type="uint"/>
+      </request>
+      <event name="moved">
+          <arg name="position" type="uint"/>
+      </event>
   </interface>
 
 </protocol>

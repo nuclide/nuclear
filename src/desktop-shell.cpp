@@ -252,10 +252,126 @@ void DesktopShell::setBackground(struct wl_client *client, struct wl_resource *r
                                  surface->output->height);
 }
 
-void DesktopShell::setPanel(wl_client *client, wl_resource *resource, wl_resource *output_resource, wl_resource *surface_resource, uint32_t pos)
+class Panel;
+class PanelGrab : public ShellGrab
+{
+public:
+    Panel *panel;
+
+    void focus() override {}
+    void motion(uint32_t time) override;
+    void button(uint32_t time, uint32_t button, uint32_t state) override;
+};
+
+class Panel {
+public:
+    Panel(wl_resource *res, weston_surface *s, DesktopShell *shell, Shell::PanelPosition p)
+        : m_resource(res)
+        , m_surface(s)
+        , m_shell(shell)
+        , m_pos(p)
+        , m_grab(nullptr)
+    {
+        wl_resource_set_implementation(m_resource, &s_implementation, this, panelDestroyed);
+    }
+
+    void move(wl_client *client, wl_resource *resource)
+    {
+        m_grab = new PanelGrab;
+        m_grab->panel = this;
+        weston_seat *seat = container_of(m_shell->compositor()->seat_list.next, weston_seat, link);
+        m_shell->startGrab(m_grab, seat);
+    }
+    void setPosition(wl_client *client, wl_resource *resource, uint32_t pos)
+    {
+        m_pos = (Shell::PanelPosition)pos;
+        m_shell->addPanelSurface(m_surface, m_surface->output, m_pos);
+    }
+
+    static void panelDestroyed(wl_resource *res)
+    {
+        Panel *_this = static_cast<Panel *>(wl_resource_get_user_data(res));
+        delete _this->m_grab;
+        delete _this;
+    }
+
+    wl_resource *m_resource;
+    weston_surface *m_surface;
+    DesktopShell *m_shell;
+    Shell::PanelPosition m_pos;
+    PanelGrab *m_grab;
+
+    static struct desktop_shell_panel_interface s_implementation;
+};
+
+void PanelGrab::motion(uint32_t time)
+{
+    weston_output *out = panel->m_surface->output;
+    if (!out) {
+        delete this;
+        return;
+    }
+
+    int x = wl_fixed_to_int(pointer()->x);
+    int y = wl_fixed_to_int(pointer()->y);
+    Shell::PanelPosition pos = panel->m_pos;
+
+    const int size = 30;
+    bool top = y <= out->y + size;
+    bool left = x <= out->x + size;
+    bool right = x >= out->x + out->width - size;
+    bool bottom = y >= out->y + out->height - size;
+
+    bool nomove = (top && pos == Shell::PanelPosition::Top) || (left && pos == Shell::PanelPosition::Left) ||
+                  (right && pos == Shell::PanelPosition::Right) || (bottom && pos == Shell::PanelPosition::Bottom);
+
+    if (!nomove) {
+        if (top) {
+            pos = Shell::PanelPosition::Top;
+        } else if (left) {
+            pos = Shell::PanelPosition::Left;
+        } else if (right) {
+            pos = Shell::PanelPosition::Right;
+        } else if (bottom) {
+            pos = Shell::PanelPosition::Bottom;
+        }
+    }
+
+    // Send the output too?
+    desktop_shell_panel_send_moved(panel->m_resource, (uint32_t)pos);
+
+    wl_resource *resource;
+    wl_resource_for_each(resource, &pointer()->focus_resource_list) {
+        wl_fixed_t sx, sy;
+        weston_surface_from_global_fixed(pointer()->focus, pointer()->x, pointer()->y, &sx, &sy);
+        wl_pointer_send_motion(resource, time, sx, sy);
+    }
+}
+
+void PanelGrab::button(uint32_t time, uint32_t button, uint32_t state)
+{
+    panel->m_grab = nullptr;
+    delete this;
+}
+
+struct desktop_shell_panel_interface Panel::s_implementation = {
+    wrapInterface(&Panel::move),
+    wrapInterface(&Panel::setPosition)
+};
+
+void DesktopShell::setPanel(wl_client *client, wl_resource *resource, uint32_t id, wl_resource *output_resource, wl_resource *surface_resource, uint32_t pos)
 {
     weston_surface *surface = static_cast<weston_surface *>(wl_resource_get_user_data(surface_resource));
     weston_output *output = static_cast<weston_output *>(wl_resource_get_user_data(output_resource));
+
+    if (surface->configure) {
+        wl_resource_post_error(surface_resource, WL_DISPLAY_ERROR_INVALID_OBJECT, "surface role already assigned");
+        return;
+    }
+
+    wl_resource *res = wl_resource_create(client, &desktop_shell_panel_interface, wl_resource_get_version(resource), id);
+    new Panel(res, surface, this, (Shell::PanelPosition)pos);
+
 
     addPanelSurface(surface, output, (Shell::PanelPosition)pos);
     desktop_shell_send_configure(resource, 0, surface_resource, surface->output->width, surface->output->height);

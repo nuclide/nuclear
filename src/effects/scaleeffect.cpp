@@ -51,20 +51,20 @@ struct Grab : public ShellGrab {
         Workspace *currWs = shell()->currentWorkspace();
 
         wl_fixed_t sx, sy;
-        weston_surface *es = weston_compositor_pick_surface(pointer()->seat->compositor, pointer()->x, pointer()->y, &sx, &sy);
+        weston_view *view = weston_compositor_pick_view(pointer()->seat->compositor, pointer()->x, pointer()->y, &sx, &sy);
 
-        if (surface == es) {
+        if (surface == view) {
             return;
         }
 
-        surface = es;
+        surface = view;
 
         for (SurfaceTransform *tr: effect->m_surfaces) {
             if (tr->surface->workspace() != currWs) {
                 continue;
             }
 
-            float alpha = (tr->surface->is(es) ? 1.0 : INACTIVE_ALPHA);
+            float alpha = (tr->surface->is(view) ? 1.0 : INACTIVE_ALPHA);
             float curr = tr->surface->alpha();
             if (alpha == curr) {
                 continue;
@@ -78,7 +78,7 @@ struct Grab : public ShellGrab {
     void button(uint32_t time, uint32_t button, uint32_t state) override
     {
         if (state == WL_POINTER_BUTTON_STATE_PRESSED) {
-            ShellSurface *shsurf = Shell::getShellSurface(surface);
+            ShellSurface *shsurf = Shell::getShellSurface(surface->surface);
             if (shsurf) {
                 effect->end(shsurf);
             }
@@ -86,7 +86,7 @@ struct Grab : public ShellGrab {
     }
 
     ScaleEffect *effect;
-    weston_surface *surface;
+    weston_view *surface;
 };
 
 ScaleEffect::ScaleEffect(Shell *shell)
@@ -210,7 +210,7 @@ void ScaleEffect::run(struct weston_seat *ws)
         shell()->hidePanels();
         m_grab->surface = nullptr;
         if (ws->pointer->focus) {
-            ShellSurface *s = Shell::getShellSurface(ws->pointer->focus);
+            ShellSurface *s = Shell::getShellSurface(ws->pointer->focus->surface);
             if (!s) {
                 return;
             }

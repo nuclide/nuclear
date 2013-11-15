@@ -24,6 +24,8 @@
 #include "utils.h"
 #include "layer.h"
 
+struct weston_view;
+
 class ShellSurface;
 class Effect;
 class Workspace;
@@ -50,6 +52,7 @@ protected:
     virtual void focus() {}
     virtual void motion(uint32_t time) {}
     virtual void button(uint32_t time, uint32_t button, uint32_t state) {}
+    virtual void cancel() {}
 
 private:
     Shell *m_shell;
@@ -95,6 +98,7 @@ public:
     ShellSurface *getShellSurface(struct wl_client *client, struct wl_resource *resource, uint32_t id, struct wl_resource *surface_resource);
     void removeShellSurface(ShellSurface *surface);
     static ShellSurface *getShellSurface(const struct weston_surface *surf);
+    static weston_view *defaultView(const weston_surface *surface);
     Binding *bindKey(uint32_t key, enum weston_keyboard_modifier modifier, weston_key_binding_handler_t handler, void *data);
     template<class T>
     Binding *bindKey(uint32_t key, enum weston_keyboard_modifier modifier,
@@ -176,14 +180,14 @@ private:
     void activateSurface(struct weston_seat *seat, uint32_t time, uint32_t button);
     void configureFullscreen(ShellSurface *surface);
     void stackFullscreen(ShellSurface *surface);
-    struct weston_surface *createBlackSurface(ShellSurface *fs_surface, float x, float y, int w, int h);
+    weston_view *createBlackSurface(ShellSurface *fs_surface, float x, float y, int w, int h);
     static void sendConfigure(struct weston_surface *surface, uint32_t edges, int32_t width, int32_t height);
     bool surfaceIsTopFullscreen(ShellSurface *surface);
     void activateWorkspace(Workspace *old);
     void pointerFocus(ShellSeat *shseat, struct weston_pointer *pointer);
     void pingTimeout(ShellSurface *shsurf);
     void pong(ShellSurface *shsurf);
-    weston_surface *createBlackSurface(int x, int y, int w, int h);
+    weston_view *createBlackSurface(int x, int y, int w, int h);
     void workspaceRemoved(Workspace *ws);
 
     struct weston_compositor *m_compositor;
@@ -197,9 +201,9 @@ private:
     bool m_windowsMinimized;
     bool m_quitting;
 
-    std::list<weston_surface *> m_blackSurfaces;
+    std::list<weston_view *> m_blackSurfaces;
     class Splash *m_splash;
-    struct weston_surface *m_grabSurface;
+    weston_view *m_grabSurface;
 
     static void staticPanelConfigure(weston_surface *es, int32_t sx, int32_t sy, int32_t width, int32_t height);
 

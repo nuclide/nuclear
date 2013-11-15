@@ -53,7 +53,7 @@ void ZoomEffect::run(struct weston_seat *seat, uint32_t time, uint32_t axis, wl_
             }
 
             output->zoom.spring_z.target = output->zoom.level;
-            weston_output_update_zoom(output, output->zoom.type);
+            weston_output_update_zoom(output);
         }
     }
 }

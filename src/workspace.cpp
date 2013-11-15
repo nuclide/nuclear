@@ -29,34 +29,35 @@ Workspace::Workspace(Shell *shell, int number)
     int x = 0, y = 0;
     int w = 0, h = 0;
 
-    m_rootSurface = weston_surface_create(shell->compositor());
-    m_rootSurface->configure = [](struct weston_surface *es, int32_t sx, int32_t sy, int32_t width, int32_t height) {};
-    m_rootSurface->configure_private = 0;
-    weston_surface_configure(m_rootSurface, x, y, w, h);
-    weston_surface_set_color(m_rootSurface, 0.0, 0.0, 0.0, 1);
-    pixman_region32_fini(&m_rootSurface->opaque);
-    pixman_region32_init_rect(&m_rootSurface->opaque, 0, 0, w, h);
-    pixman_region32_fini(&m_rootSurface->input);
-    pixman_region32_init_rect(&m_rootSurface->input, 0, 0, w, h);
+    weston_surface *s = weston_surface_create(shell->compositor());
+    m_rootSurface = weston_view_create(s);
+    s->configure = [](struct weston_surface *es, int32_t sx, int32_t sy, int32_t width, int32_t height) {};
+    s->configure_private = 0;
+    weston_view_configure(m_rootSurface, x, y, w, h);
+    weston_surface_set_color(s, 0.0, 0.0, 0.0, 1);
+    pixman_region32_fini(&s->opaque);
+    pixman_region32_init_rect(&s->opaque, 0, 0, w, h);
+    pixman_region32_fini(&s->input);
+    pixman_region32_init_rect(&s->input, 0, 0, w, h);
 
     m_layer.addSurface(m_rootSurface);
 }
 
 Workspace::~Workspace()
 {
-    for (weston_surface *s: m_layer) {
-        ShellSurface *shsurf = Shell::getShellSurface(s);
+    for (weston_view *v: m_layer) {
+        ShellSurface *shsurf = Shell::getShellSurface(v->surface);
         if (!shsurf)
             continue;
 
         if (shsurf->transformParent() == m_rootSurface) {
-            weston_surface_set_transform_parent(s, nullptr);
+            weston_view_set_transform_parent(v, nullptr);
         }
     }
 
     remove();
     destroyedSignal(this);
-    weston_surface_destroy(m_rootSurface);
+    weston_surface_destroy(m_rootSurface->surface);
 }
 
 void Workspace::init(wl_client *client)
@@ -68,7 +69,7 @@ void Workspace::init(wl_client *client)
 void Workspace::addSurface(ShellSurface *surface)
 {
     if (!surface->transformParent()) {
-        weston_surface_set_transform_parent(surface->m_surface, m_rootSurface);
+        weston_view_set_transform_parent(surface->view(), m_rootSurface);
     }
     m_layer.addSurface(surface);
 }
@@ -78,7 +79,7 @@ void Workspace::restack(ShellSurface *surface)
     m_layer.restack(surface);
 }
 
-void Workspace::stackAbove(struct weston_surface *surf, struct weston_surface *parent)
+void Workspace::stackAbove(weston_view *surf, weston_view *parent)
 {
     m_layer.stackAbove(surf, parent);
 }
@@ -89,8 +90,8 @@ void Workspace::setTransform(const Transform &tr)
     m_transform = tr;
     wl_list_insert(&m_rootSurface->geometry.transformation_list, &m_transform.nativeHandle()->link);
 
-    weston_surface_geometry_dirty(m_rootSurface);
-    weston_surface_damage(m_rootSurface);
+    weston_view_geometry_dirty(m_rootSurface);
+    weston_surface_damage(m_rootSurface->surface);
 }
 
 int Workspace::numberOfSurfaces() const

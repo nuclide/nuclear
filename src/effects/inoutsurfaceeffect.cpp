@@ -22,7 +22,7 @@
 const int ALPHA_ANIM_DURATION = 200;
 
 struct InOutSurfaceEffect::Surface {
-    weston_surface *surface;
+    weston_view *view;
     Animation animation;
     InOutSurfaceEffect *effect;
     struct Listener {
@@ -32,12 +32,12 @@ struct InOutSurfaceEffect::Surface {
 
     void setAlpha(float alpha)
     {
-        surface->alpha = alpha;
-        weston_surface_damage(surface);
+        view->alpha = alpha;
+        weston_surface_damage(view->surface);
     }
     void done()
     {
-        weston_surface_destroy(surface);
+        weston_surface_destroy(view->surface);
         effect->m_surfaces.remove(this);
         delete this;
     }
@@ -45,9 +45,9 @@ struct InOutSurfaceEffect::Surface {
     {
         Surface *surf = container_of(listener, Listener, destroyListener)->parent;
 
-        surf->animation.setStart(surf->surface->alpha);
+        surf->animation.setStart(surf->view->alpha);
         surf->animation.setTarget(0);
-        surf->animation.run(surf->surface->output, ALPHA_ANIM_DURATION, Animation::Flags::SendDone);
+        surf->animation.run(surf->view->output, ALPHA_ANIM_DURATION, Animation::Flags::SendDone);
     }
 };
 
@@ -59,7 +59,7 @@ InOutSurfaceEffect::InOutSurfaceEffect(Shell *shell)
 InOutSurfaceEffect::~InOutSurfaceEffect()
 {
     for (auto i = m_surfaces.begin(); i != m_surfaces.end(); ++i) {
-        weston_surface_destroy((*i)->surface);
+        weston_surface_destroy((*i)->view->surface);
         delete *i;
         m_surfaces.erase(i);
     }
@@ -68,13 +68,13 @@ InOutSurfaceEffect::~InOutSurfaceEffect()
 void InOutSurfaceEffect::addedSurface(ShellSurface *surface)
 {
     Surface *surf = new Surface;
-    surf->surface = surface->weston_surface();
+    surf->view = surface->view();
     surf->effect = this;
 
     ++surface->weston_surface()->ref_count;
     surf->listener.parent = surf;
     surf->listener.destroyListener.notify = Surface::destroyed;
-    wl_resource_add_destroy_listener(surf->surface->resource, &surf->listener.destroyListener);
+    wl_resource_add_destroy_listener(surf->view->surface->resource, &surf->listener.destroyListener);
 
     surf->animation.updateSignal->connect(surf, &Surface::setAlpha);
     surf->animation.doneSignal->connect(surf, &Surface::done);

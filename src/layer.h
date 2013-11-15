@@ -22,6 +22,8 @@
 
 class ShellSurface;
 
+struct weston_view;
+
 class Layer {
 public:
     template<class L, class S>
@@ -54,8 +56,8 @@ public:
         friend class Layer;
     };
 
-    typedef Iterator<struct wl_list, struct weston_surface> iterator;
-    typedef Iterator<const struct wl_list, const struct weston_surface> const_iterator;
+    typedef Iterator<struct wl_list, weston_view> iterator;
+    typedef Iterator<const struct wl_list, const weston_view> const_iterator;
 
     Layer();
 
@@ -66,16 +68,16 @@ public:
     void show();
     bool isVisible() const;
 
-    void addSurface(struct weston_surface *surf);
+    void addSurface(weston_view *surf);
     void addSurface(ShellSurface *surf);
-    void restack(struct weston_surface *surf);
+    void restack(weston_view *surf);
     void restack(ShellSurface *surf);
 
     bool isEmpty() const;
     int numberOfSurfaces() const;
 
-    void stackAbove(struct weston_surface *surf, struct weston_surface *parent);
-    void stackBelow(struct weston_surface *surf, struct weston_surface *parent);
+    void stackAbove(weston_view *surf, weston_view *parent);
+    void stackBelow(weston_view *surf, weston_view *parent);
 
     iterator begin() const;
     iterator rbegin() const;
@@ -119,7 +121,7 @@ template<class L, class S>
 S *Layer::Iterator<L, S>::deref() const
 {
     if (m_elm) {
-        return container_of(m_elm, struct weston_surface, layer_link);
+        return container_of(m_elm, weston_view, layer_link);
     } else {
         return nullptr;
     }

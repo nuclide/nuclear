@@ -22,6 +22,8 @@
 #include "transform.h"
 #include "shellsignal.h"
 
+struct weston_view;
+
 class Shell;
 
 class Workspace {
@@ -33,7 +35,7 @@ public:
 
     void addSurface(ShellSurface *surface);
     void restack(ShellSurface *surface);
-    void stackAbove(struct weston_surface *surf, struct weston_surface *parent);
+    void stackAbove(weston_view *surf, weston_view *parent);
 
     void setTransform(const Transform &tr);
 
@@ -62,7 +64,7 @@ private:
     Shell *m_shell;
     int m_number;
     wl_resource *m_resource;
-    struct weston_surface *m_rootSurface;
+    weston_view *m_rootSurface;
     Transform m_transform;
     Layer m_layer;
     bool m_active;

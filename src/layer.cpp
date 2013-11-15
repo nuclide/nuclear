@@ -30,8 +30,8 @@ void Layer::insert(struct weston_layer *below)
     if (below) {
         wl_list_remove(&m_layer.link);
         wl_list_insert(&below->link, &m_layer.link);
-        for (struct weston_surface *s: *this) {
-            weston_surface_damage(s);
+        for (weston_view *v: *this) {
+            weston_surface_damage(v->surface);
         }
     }
 }
@@ -41,8 +41,8 @@ void Layer::insert(Layer *below)
     if (below) {
         wl_list_remove(&m_layer.link);
         wl_list_insert(&below->m_layer.link, &m_layer.link);
-        for (struct weston_surface *s: *this) {
-            weston_surface_damage(s);
+        for (weston_view *v: *this) {
+            weston_surface_damage(v->surface);
         }
     }
 }
@@ -55,9 +55,9 @@ void Layer::remove()
 
 void Layer::hide()
 {
-    for (struct weston_surface *s: *this) {
-        weston_surface_damage_below(s);
-        weston_surface_schedule_repaint(s);
+    for (weston_view *v: *this) {
+        weston_view_damage_below(v);
+        weston_surface_schedule_repaint(v->surface);
     }
     if (!wl_list_empty(&m_layer.link)) {
         m_below = m_layer.link.prev;
@@ -68,7 +68,7 @@ void Layer::hide()
 
 bool Layer::isVisible() const
 {
-    return !wl_list_empty(&m_layer.link) && !wl_list_empty(&m_layer.surface_list);
+    return !wl_list_empty(&m_layer.link) && !wl_list_empty(&m_layer.view_list);
 }
 
 void Layer::show()
@@ -76,25 +76,25 @@ void Layer::show()
     if (m_below) {
         wl_list_insert(m_below, &m_layer.link);
     }
-    for (struct weston_surface *s: *this) {
-        weston_surface_damage(s);
+    for (weston_view *v: *this) {
+        weston_surface_damage(v->surface);
     }
 }
 
-void Layer::addSurface(struct weston_surface *surf)
+void Layer::addSurface(weston_view *view)
 {
-    if (surf->layer_link.prev) {
-        wl_list_remove(&surf->layer_link);
+    if (view->layer_link.prev) {
+        wl_list_remove(&view->layer_link);
     }
-    wl_list_insert(&m_layer.surface_list, &surf->layer_link);
+    wl_list_insert(&m_layer.view_list, &view->layer_link);
 }
 
 void Layer::addSurface(ShellSurface *surf)
 {
-    addSurface(surf->m_surface);
+    addSurface(surf->view());
 }
 
-void Layer::stackAbove(struct weston_surface *surf, struct weston_surface *parent)
+void Layer::stackAbove(weston_view *surf, weston_view *parent)
 {
     wl_list_remove(&surf->layer_link);
     wl_list_init(&surf->layer_link);
@@ -102,7 +102,7 @@ void Layer::stackAbove(struct weston_surface *surf, struct weston_surface *paren
     wl_list_insert(parent->layer_link.prev, &surf->layer_link);
 }
 
-void Layer::stackBelow(struct weston_surface *surf, struct weston_surface *parent)
+void Layer::stackBelow(weston_view *surf, weston_view *parent)
 {
     wl_list_remove(&surf->layer_link);
     wl_list_init(&surf->layer_link);
@@ -110,37 +110,37 @@ void Layer::stackBelow(struct weston_surface *surf, struct weston_surface *paren
     wl_list_insert(parent->layer_link.prev->prev, &surf->layer_link);
 }
 
-void Layer::restack(struct weston_surface *surf)
+void Layer::restack(weston_view *surf)
 {
-    weston_surface_restack(surf, &m_layer.surface_list);
+    weston_view_restack(surf, &m_layer.view_list);
 }
 
 void Layer::restack(ShellSurface *surf)
 {
-    restack(surf->m_surface);
+    restack(surf->view());
 }
 
 bool Layer::isEmpty() const
 {
-    return wl_list_empty(&m_layer.surface_list);
+    return wl_list_empty(&m_layer.view_list);
 }
 
 int Layer::numberOfSurfaces() const
 {
-    return wl_list_length(&m_layer.surface_list);
+    return wl_list_length(&m_layer.view_list);
 }
 
 Layer::iterator Layer::begin() const
 {
-    return iterator(&m_layer.surface_list, m_layer.surface_list.next, false);
+    return iterator(&m_layer.view_list, m_layer.view_list.next, false);
 }
 
 Layer::iterator Layer::rbegin() const
 {
-    return iterator(&m_layer.surface_list, m_layer.surface_list.prev, true);
+    return iterator(&m_layer.view_list, m_layer.view_list.prev, true);
 }
 
 Layer::iterator Layer::end() const
 {
-    return iterator(&m_layer.surface_list, &m_layer.surface_list, false);
+    return iterator(&m_layer.view_list, &m_layer.view_list, false);
 }

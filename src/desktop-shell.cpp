@@ -81,9 +81,9 @@ struct BusyGrab : public ShellGrab {
     void focus() override
     {
         wl_fixed_t sx, sy;
-        weston_surface *es = weston_compositor_pick_surface(pointer()->seat->compositor, pointer()->x, pointer()->y, &sx, &sy);
+        weston_view *view = weston_compositor_pick_view(pointer()->seat->compositor, pointer()->x, pointer()->y, &sx, &sy);
 
-        if (surface->weston_surface() != es) {
+        if (surface->view() != view) {
             delete this;
         }
     }
@@ -178,12 +178,12 @@ void DesktopShell::unbind(struct wl_resource *resource)
 
 void DesktopShell::moveBinding(struct weston_seat *seat, uint32_t time, uint32_t button)
 {
-    struct weston_surface *surface = seat->pointer->focus;
-    if (!surface) {
+    weston_view *view = seat->pointer->focus;
+    if (!view) {
         return;
     }
 
-    ShellSurface *shsurf = getShellSurface(surface);
+    ShellSurface *shsurf = getShellSurface(view->surface);
     if (!shsurf || shsurf->type() == ShellSurface::Type::Fullscreen || shsurf->type() == ShellSurface::Type::Maximized) {
         return;
     }
@@ -196,7 +196,7 @@ void DesktopShell::moveBinding(struct weston_seat *seat, uint32_t time, uint32_t
 
 void DesktopShell::resizeBinding(weston_seat *seat, uint32_t time, uint32_t button)
 {
-    weston_surface *surface = weston_surface_get_main_surface(seat->pointer->focus);
+    weston_surface *surface = weston_surface_get_main_surface(seat->pointer->focus->surface);
     if (!surface) {
         return;
     }
@@ -206,36 +206,35 @@ void DesktopShell::resizeBinding(weston_seat *seat, uint32_t time, uint32_t butt
         return;
     }
 
-    shsurf = shsurf->topLevelParent();
-    if (shsurf) {
+    if (ShellSurface *top = shsurf->topLevelParent()) {
         int32_t x, y;
-        weston_surface_from_global(surface, wl_fixed_to_int(seat->pointer->grab_x), wl_fixed_to_int(seat->pointer->grab_y), &x, &y);
+        weston_view_from_global(shsurf->view(), wl_fixed_to_int(seat->pointer->grab_x), wl_fixed_to_int(seat->pointer->grab_y), &x, &y);
 
         pixman_box32_t *bbox = pixman_region32_extents(&surface->input);
 
         uint32_t edges = 0;
-        int32_t w = surface->geometry.width / 3;
+        int32_t w = surface->width / 3;
         if (w > 20) w = 20;
         w += bbox->x1;
 
         if (x < w)
             edges |= WL_SHELL_SURFACE_RESIZE_LEFT;
-        else if (x < surface->geometry.width - w)
+        else if (x < surface->width - w)
             edges |= 0;
         else
             edges |= WL_SHELL_SURFACE_RESIZE_RIGHT;
 
-        int32_t h = surface->geometry.height / 3;
+        int32_t h = surface->height / 3;
         if (h > 20) h = 20;
         h += bbox->y1;
         if (y < h)
             edges |= WL_SHELL_SURFACE_RESIZE_TOP;
-        else if (y < surface->geometry.height - h)
+        else if (y < surface->height - h)
             edges |= 0;
         else
             edges |= WL_SHELL_SURFACE_RESIZE_BOTTOM;
 
-        shsurf->dragResize(seat, edges);
+        top->dragResize(seat, edges);
     }
 }
 
@@ -343,7 +342,7 @@ void PanelGrab::motion(uint32_t time)
     wl_resource *resource;
     wl_resource_for_each(resource, &pointer()->focus_resource_list) {
         wl_fixed_t sx, sy;
-        weston_surface_from_global_fixed(pointer()->focus, pointer()->x, pointer()->y, &sx, &sy);
+        weston_view_from_global_fixed(pointer()->focus, pointer()->x, pointer()->y, &sx, &sy);
         wl_pointer_send_motion(resource, time, sx, sy);
     }
 }
@@ -423,7 +422,7 @@ void DesktopShell::setLockSurface(struct wl_client *client, struct wl_resource *
 
 class PopupGrab : public ShellGrab {
 public:
-    weston_surface *surface;
+    weston_view *view;
     wl_resource *shsurfResource;
     bool inside;
     uint32_t creationTime;
@@ -431,18 +430,18 @@ public:
     void focus() override
     {
         wl_fixed_t sx, sy;
-        weston_surface *es = weston_compositor_pick_surface(pointer()->seat->compositor, pointer()->x, pointer()->y, &sx, &sy);
+        weston_view *v = weston_compositor_pick_view(pointer()->seat->compositor, pointer()->x, pointer()->y, &sx, &sy);
 
-        inside = es == surface;
+        inside = v == view;
         if (inside)
-            weston_pointer_set_focus(pointer(), surface, sx, sy);
+            weston_pointer_set_focus(pointer(), view, sx, sy);
     }
     void motion(uint32_t time) override
     {
         wl_resource *resource;
         wl_resource_for_each(resource, &pointer()->focus_resource_list) {
             wl_fixed_t sx, sy;
-            weston_surface_from_global_fixed(pointer()->focus, pointer()->x, pointer()->y, &sx, &sy);
+            weston_view_from_global_fixed(pointer()->focus, pointer()->x, pointer()->y, &sx, &sy);
             wl_pointer_send_motion(resource, time, sx, sy);
         }
     }
@@ -470,9 +469,9 @@ static void popupGrabDestroyed(wl_resource *res)
 }
 
 struct Popup {
-    Popup(weston_surface *p, DesktopShell *s, int32_t _x, int32_t _y)
+    Popup(weston_view *p, DesktopShell *s, int32_t _x, int32_t _y)
         : parent(p), shell(s), x(_x), y(_y) {}
-    weston_surface *parent;
+    weston_view *parent;
     DesktopShell *shell;
     int32_t x, y;
     wl_listener destroyListener;
@@ -493,10 +492,11 @@ void DesktopShell::configurePopup(weston_surface *es, int32_t sx, int32_t sy, in
     DesktopShell *shell= p->shell;
     Layer *layer = &shell->m_panelsLayer;
 
-    weston_surface_configure(es, p->parent->geometry.x + p->x, p->parent->geometry.y + p->y, width, height);
+    weston_view *view = container_of(es->views.next, weston_view, surface_link);
+    weston_view_configure(view, p->parent->geometry.x + p->x, p->parent->geometry.y + p->y, width, height);
 
-    if (wl_list_empty(&es->layer_link) || es->layer_link.next == es->layer_link.prev) {
-        layer->addSurface(es);
+    if (wl_list_empty(&view->layer_link) || view->layer_link.next == view->layer_link.prev) {
+        layer->addSurface(view);
         weston_compositor_schedule_repaint(es->compositor);
     }
 }
@@ -505,15 +505,16 @@ void DesktopShell::setPopup(wl_client *client, wl_resource *resource, uint32_t i
 {
     weston_surface *parent = static_cast<weston_surface *>(wl_resource_get_user_data(parent_resource));
     weston_surface *surface = static_cast<weston_surface *>(wl_resource_get_user_data(surface_resource));
+    weston_view *pv = container_of(parent->views.next, weston_view, surface_link);
 
     Popup *p = nullptr;
     if (surface->configure == configurePopup) {
         p = static_cast<Popup *>(surface->configure_private);
         p->x = x;
         p->y = y;
-        p->parent = parent;
+        p->parent = pv;
     } else {
-        p = new Popup(parent, this, x, y);
+        p = new Popup(pv, this, x, y);
         p->destroyListener.notify = popupDestroyed;
         wl_signal_add(&surface->destroy_signal, &p->destroyListener);
     }
@@ -521,6 +522,7 @@ void DesktopShell::setPopup(wl_client *client, wl_resource *resource, uint32_t i
     surface->configure = configurePopup;
     surface->configure_private = p;
     surface->output = parent->output;
+    weston_view *sv = weston_view_create(surface);;
 
     PopupGrab *grab = new PopupGrab;
     if (!grab)
@@ -531,12 +533,12 @@ void DesktopShell::setPopup(wl_client *client, wl_resource *resource, uint32_t i
     wl_resource_set_user_data(grab->shsurfResource, grab);
 
     weston_seat *seat = container_of(compositor()->seat_list.next, weston_seat, link);
-    grab->surface = surface;
+    grab->view = sv;
     grab->creationTime = seat->pointer->grab_time;
 
     wl_fixed_t sx, sy;
-    weston_surface_from_global_fixed(surface, seat->pointer->x, seat->pointer->y, &sx, &sy);
-    weston_pointer_set_focus(seat->pointer, surface, sx, sy);
+    weston_view_from_global_fixed(sv, seat->pointer->x, seat->pointer->y, &sx, &sy);
+    weston_pointer_set_focus(seat->pointer, sv, sx, sy);
 
     startGrab(grab, seat);
 }
@@ -601,10 +603,10 @@ public:
     void focus() override
     {
         wl_fixed_t sx, sy;
-        weston_surface *surface = weston_compositor_pick_surface(pointer()->seat->compositor, pointer()->x, pointer()->y, &sx, &sy);
-        if (surfFocus != surface) {
-            surfFocus = surface;
-            desktop_shell_grab_send_focus(resource, surface->resource, sx, sy);
+        weston_view *view = weston_compositor_pick_view(pointer()->seat->compositor, pointer()->x, pointer()->y, &sx, &sy);
+        if (surfFocus != view) {
+            surfFocus = view;
+            desktop_shell_grab_send_focus(resource, view->surface->resource, sx, sy);
         }
     }
     void motion(uint32_t time) override
@@ -612,7 +614,7 @@ public:
         wl_fixed_t sx = pointer()->x;
         wl_fixed_t sy = pointer()->y;
         if (surfFocus) {
-            weston_surface_from_global_fixed(surfFocus, pointer()->x, pointer()->y, &sx, &sy);
+            weston_view_from_global_fixed(surfFocus, pointer()->x, pointer()->y, &sx, &sy);
         }
 
         desktop_shell_grab_send_motion(resource, time, sx, sy);
@@ -639,7 +641,7 @@ public:
     }
 
     wl_resource *resource;
-    weston_surface *surfFocus;
+    weston_view *surfFocus;
     bool pressed;
 };
 
@@ -676,14 +678,12 @@ void DesktopShell::createGrab(wl_client *client, wl_resource *resource, uint32_t
     ShellSeat::shellSeat(seat)->endPopupGrab();
 
     wl_fixed_t sx, sy;
-    struct weston_surface *surface = weston_compositor_pick_surface(compositor(),
-                                                                    seat->pointer->x, seat->pointer->y,
-                                                                    &sx, &sy);
+    weston_view *view = weston_compositor_pick_view(compositor(), seat->pointer->x, seat->pointer->y, &sx, &sy);
+    grab->surfFocus = view;
     startGrab(grab, seat);
 
-    weston_pointer_set_focus(seat->pointer, surface, sx, sy);
-    grab->surfFocus = surface;
-    desktop_shell_grab_send_focus(grab->resource, surface->resource, sx, sy);
+    weston_pointer_set_focus(seat->pointer, view, sx, sy);
+    desktop_shell_grab_send_focus(grab->resource, view->surface->resource, sx, sy);
 }
 
 void DesktopShell::quit(wl_client *client, wl_resource *resource)

@@ -25,6 +25,8 @@
 #include "shellsignal.h"
 #include "utils.h"
 
+struct weston_view;
+
 class Shell;
 class ShellSeat;
 class Workspace;
@@ -65,6 +67,7 @@ public:
     inline const struct wl_resource *wl_resource() const { return m_resource; }
     inline struct wl_client *client() const { return wl_resource_get_client(m_surface->resource); }
     inline struct weston_surface *weston_surface() const { return m_surface; }
+    inline weston_view *view() const { return m_view; }
 
     inline Type type() const { return m_type; }
     bool isMapped() const;
@@ -77,11 +80,12 @@ public:
     IRect2D surfaceTreeBoundingBox() const;
     float alpha() const;
     inline bool is(struct weston_surface *s) const { return s == m_surface; }
+    inline bool is(weston_view *v) const { return v->surface == m_surface; }
     bool isPopup() const;
     inline struct weston_output *output() const { return m_surface->output; }
     ShellSurface *topLevelParent();
     inline Workspace *workspace() const { return m_workspace; }
-    struct weston_surface *transformParent() const;
+    weston_view *transformParent() const;
 
     void setTitle(const char *title);
     inline std::string title() const { return m_title; }
@@ -132,6 +136,7 @@ private:
     struct wl_resource *m_resource;
     struct wl_resource *m_windowResource;
     struct weston_surface *m_surface;
+    weston_view *m_view;
     WlListener m_surfaceDestroyListener;
     Type m_type;
     Type m_pendingType;
@@ -162,7 +167,7 @@ private:
         enum wl_shell_surface_fullscreen_method type;
         struct weston_transform transform; /* matrix from x, y */
         uint32_t framerate;
-        struct weston_surface *blackSurface;
+        weston_view *blackView;
         struct weston_output *output;
     } m_fullscreen;
 

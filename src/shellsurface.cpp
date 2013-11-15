@@ -35,6 +35,7 @@ ShellSurface::ShellSurface(Shell *shell, struct weston_surface *surface)
             , m_resource(nullptr)
             , m_windowResource(nullptr)
             , m_surface(surface)
+            , m_view(weston_view_create(surface))
             , m_type(Type::None)
             , m_pendingType(Type::None)
             , m_unresponsive(false)
@@ -47,7 +48,7 @@ ShellSurface::ShellSurface(Shell *shell, struct weston_surface *surface)
 {
     m_popup.seat = nullptr;
     wl_list_init(&m_fullscreen.transform.link);
-    m_fullscreen.blackSurface = nullptr;
+    m_fullscreen.blackView = nullptr;
 
     m_surfaceDestroyListener.listen(&surface->destroy_signal);
     m_surfaceDestroyListener.signal->connect(this, &ShellSurface::surfaceDestroyed);
@@ -63,8 +64,8 @@ ShellSurface::~ShellSurface()
     }
     destroyPingTimer();
     m_shell->removeShellSurface(this);
-    if (m_fullscreen.blackSurface) {
-        weston_surface_destroy(m_fullscreen.blackSurface);
+    if (m_fullscreen.blackView) {
+        weston_surface_destroy(m_fullscreen.blackView->surface);
     }
     m_surface->configure = nullptr;
     destroyWindow();
@@ -201,8 +202,8 @@ void ShellSurface::show()
 
 void ShellSurface::hide()
 {
-    wl_list_remove(&m_surface->layer_link);
-    wl_list_init(&m_surface->layer_link);
+    wl_list_remove(&m_view->layer_link);
+    wl_list_init(&m_view->layer_link);
 }
 
 void ShellSurface::sendState()
@@ -242,11 +243,12 @@ bool ShellSurface::updateType()
                 m_savedX = x();
                 m_savedY = y();
                 break;
-            case Type::Transient:
-                weston_surface_set_position(m_surface, m_parent->geometry.x + m_transient.x, m_parent->geometry.y + m_transient.y);
-                break;
+            case Type::Transient: {
+                weston_view *pv = Shell::defaultView(m_parent);
+                weston_view_set_position(m_view, pv->geometry.x + m_transient.x, pv->geometry.y + m_transient.y);
+            } break;
             case Type::XWayland:
-                weston_surface_set_position(m_surface, m_transient.x, m_transient.y);
+                weston_view_set_position(m_view, m_transient.x, m_transient.y);
             default:
                 break;
         }
@@ -265,9 +267,9 @@ bool ShellSurface::updateType()
 
 void ShellSurface::map(int32_t x, int32_t y, int32_t width, int32_t height)
 {
-    m_surface->geometry.width = width;
-    m_surface->geometry.height = height;
-    weston_surface_geometry_dirty(m_surface);
+    m_view->geometry.width = width;
+    m_view->geometry.height = height;
+    weston_view_geometry_dirty(m_view);
 
     switch (m_type) {
         case Type::Popup:
@@ -283,15 +285,15 @@ void ShellSurface::map(int32_t x, int32_t y, int32_t width, int32_t height)
         }
         case Type::TopLevel:
         case Type::None:
-            weston_surface_set_position(m_surface, x, y);
+            weston_view_set_position(m_view, x, y);
         default:
             break;
     }
 
     if (m_type != Type::None) {
-        weston_surface_update_transform(m_surface);
+        weston_view_update_transform(m_view);
         if (m_type == Type::Maximized) {
-            m_surface->output = m_output;
+            m_view->output = m_output;
         }
     }
 }
@@ -339,11 +341,11 @@ void ShellSurface::setTitle(const char *title)
 
 void ShellSurface::mapPopup()
 {
-    m_surface->output = m_parent->output;
+    m_view->output = m_parent->output;
 
-    weston_surface_set_transform_parent(m_surface, m_parent);
-    weston_surface_set_position(m_surface, m_popup.x, m_popup.y);
-    weston_surface_update_transform(m_surface);
+    weston_view_set_transform_parent(m_view, Shell::defaultView(m_parent));
+    weston_view_set_position(m_view, m_popup.x, m_popup.y);
+    weston_view_update_transform(m_view);
 
     if (!m_popup.seat->addPopupGrab(this, m_popup.serial)) {
         popupDone();
@@ -353,7 +355,7 @@ void ShellSurface::mapPopup()
 void ShellSurface::addTransform(struct weston_transform *transform)
 {
     removeTransform(transform);
-    wl_list_insert(&m_surface->geometry.transformation_list, &transform->link);
+    wl_list_insert(&m_view->geometry.transformation_list, &transform->link);
 
     damage();
 }
@@ -372,14 +374,14 @@ void ShellSurface::removeTransform(struct weston_transform *transform)
 
 void ShellSurface::damage()
 {
-    weston_surface_geometry_dirty(m_surface);
-    weston_surface_update_transform(m_surface);
+    weston_view_geometry_dirty(m_view);
+    weston_view_update_transform(m_view);
     weston_surface_damage(m_surface);
 }
 
 void ShellSurface::setAlpha(float alpha)
 {
-    m_surface->alpha = alpha;
+    m_view->alpha = alpha;
     damage();
 }
 
@@ -398,39 +400,39 @@ bool ShellSurface::isMapped() const
 
 int32_t ShellSurface::x() const
 {
-    return m_surface->geometry.x;
+    return m_view->geometry.x;
 }
 
 int32_t ShellSurface::y() const
 {
-    return m_surface->geometry.y;
+    return m_view->geometry.y;
 }
 
 int32_t ShellSurface::width() const
 {
-    return m_surface->geometry.width;
+    return m_view->geometry.width;
 }
 
 int32_t ShellSurface::height() const
 {
-    return m_surface->geometry.height;
+    return m_view->geometry.height;
 }
 
 int32_t ShellSurface::transformedWidth() const
 {
-    pixman_box32_t *box = pixman_region32_extents(&m_surface->transform.boundingbox);
+    pixman_box32_t *box = pixman_region32_extents(&m_view->transform.boundingbox);
     return box->x2 - box->x1;
 }
 
 int32_t ShellSurface::transformedHeight() const
 {
-    pixman_box32_t *box = pixman_region32_extents(&m_surface->transform.boundingbox);
+    pixman_box32_t *box = pixman_region32_extents(&m_view->transform.boundingbox);
     return box->y2 - box->y1;
 }
 
 float ShellSurface::alpha() const
 {
-    return m_surface->alpha;
+    return m_view->alpha;
 }
 
 bool ShellSurface::isPopup() const
@@ -451,9 +453,9 @@ ShellSurface *ShellSurface::topLevelParent()
     return this;
 }
 
-struct weston_surface *ShellSurface::transformParent() const
+weston_view *ShellSurface::transformParent() const
 {
-    return m_surface->geometry.parent;
+    return m_view->geometry.parent;
 }
 
 void ShellSurface::setFullscreen(uint32_t method, uint32_t framerate, struct weston_output *output)
@@ -479,17 +481,17 @@ void ShellSurface::unsetFullscreen()
     m_fullscreen.type = WL_SHELL_SURFACE_FULLSCREEN_METHOD_DEFAULT;
     m_fullscreen.framerate = 0;
     removeTransform(&m_fullscreen.transform);
-    if (m_fullscreen.blackSurface) {
-        weston_surface_destroy(m_fullscreen.blackSurface);
+    if (m_fullscreen.blackView) {
+        weston_surface_destroy(m_fullscreen.blackView->surface);
     }
-    m_fullscreen.blackSurface = nullptr;
+    m_fullscreen.blackView = nullptr;
     m_fullscreen.output = nullptr;
-    weston_surface_set_position(m_surface, m_savedX, m_savedY);
+    weston_view_set_position(m_view, m_savedX, m_savedY);
 }
 
 void ShellSurface::unsetMaximized()
 {
-    weston_surface_set_position(m_surface, m_savedX, m_savedY);
+    weston_view_set_position(m_view, m_savedX, m_savedY);
 }
 
 void ShellSurface::centerOnOutput(struct weston_output *output)
@@ -501,7 +503,7 @@ void ShellSurface::centerOnOutput(struct weston_output *output)
     x = output->x + (output->width - width) / 2;
     y = output->y + (output->height - height) / 2;
 
-    weston_surface_configure(m_surface, x, y, width, height);
+    weston_view_configure(m_view, x, y, width, height);
 }
 
 
@@ -575,9 +577,9 @@ public:
         if (!shsurf)
             return;
 
-        weston_surface *es = shsurf->m_surface;
-        weston_surface_configure(es, dx, dy, es->geometry.width, es->geometry.height);
-        weston_compositor_schedule_repaint(es->compositor);
+        weston_view *view = shsurf->view();
+        weston_view_configure(view, dx, dy, view->geometry.width, view->geometry.height);
+        weston_compositor_schedule_repaint(shsurf->m_surface->compositor);
     }
     void button(uint32_t time, uint32_t button, uint32_t state_w) override
     {
@@ -600,7 +602,7 @@ void ShellSurface::move(struct wl_client *client, struct wl_resource *resource, 
 {
     struct weston_seat *ws = static_cast<weston_seat *>(wl_resource_get_user_data(seat_resource));
 
-    struct weston_surface *surface = weston_surface_get_main_surface(ws->pointer->focus);
+    struct weston_surface *surface = weston_surface_get_main_surface(ws->pointer->focus->surface);
     if (ws->pointer->button_count == 0 || ws->pointer->grab_serial != serial || surface != m_surface) {
         return;
     }
@@ -624,8 +626,8 @@ void ShellSurface::dragMove(struct weston_seat *ws)
     if (!move)
         return;
 
-    move->dx = wl_fixed_from_double(m_surface->geometry.x) - ws->pointer->grab_x;
-    move->dy = wl_fixed_from_double(m_surface->geometry.y) - ws->pointer->grab_y;
+    move->dx = wl_fixed_from_double(m_view->geometry.x) - ws->pointer->grab_x;
+    move->dy = wl_fixed_from_double(m_view->geometry.y) - ws->pointer->grab_y;
     move->shsurf = this;
     m_runningGrab = move;
 
@@ -643,12 +645,12 @@ public:
         if (!shsurf)
             return;
 
-        weston_surface *es = shsurf->m_surface;
+        weston_view *view = shsurf->m_view;
 
         wl_fixed_t from_x, from_y;
         wl_fixed_t to_x, to_y;
-        weston_surface_from_global_fixed(es, pointer()->grab_x, pointer()->grab_y, &from_x, &from_y);
-        weston_surface_from_global_fixed(es, pointer()->x, pointer()->y, &to_x, &to_y);
+        weston_view_from_global_fixed(view, pointer()->grab_x, pointer()->grab_y, &from_x, &from_y);
+        weston_view_from_global_fixed(view, pointer()->x, pointer()->y, &to_x, &to_y);
 
         int32_t w = width;
         if (edges & WL_SHELL_SURFACE_RESIZE_LEFT) {
@@ -685,7 +687,7 @@ void ShellSurface::resize(struct wl_client *client, struct wl_resource *resource
 {
     struct weston_seat *ws = static_cast<weston_seat *>(wl_resource_get_user_data(seat_resource));
 
-    struct weston_surface *surface = weston_surface_get_main_surface(ws->pointer->focus);
+    struct weston_surface *surface = weston_surface_get_main_surface(ws->pointer->focus->surface);
     if (ws->pointer->button_count == 0 || ws->pointer->grab_serial != serial || surface != m_surface) {
         return;
     }
@@ -702,15 +704,15 @@ IRect2D ShellSurface::surfaceTreeBoundingBox() const {
     struct weston_subsurface *subsurface;
 
     pixman_region32_init_rect(&region, 0, 0,
-                              m_surface->geometry.width,
-                              m_surface->geometry.height);
+                              m_surface->width,
+                              m_surface->height);
 
     wl_list_for_each(subsurface, &m_surface->subsurface_list, parent_link) {
         pixman_region32_union_rect(&region, &region,
                                    subsurface->position.x,
                                    subsurface->position.y,
-                                   subsurface->surface->geometry.width,
-                                   subsurface->surface->geometry.height);
+                                   subsurface->surface->width,
+                                   subsurface->surface->height);
     }
 
     box = pixman_region32_extents(&region);

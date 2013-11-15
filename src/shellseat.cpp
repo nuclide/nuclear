@@ -44,9 +44,9 @@ public:
 
     void surfaceDestroyed() {
         if (surface->workspace()) {
-            for (const weston_surface *surf: surface->workspace()->layer()) {
-                if (surf != surface->weston_surface()) {
-                    ShellSurface *shsurf = Shell::getShellSurface(surf);
+            for (const weston_view *view: surface->workspace()->layer()) {
+                if (view != surface->view()) {
+                    ShellSurface *shsurf = Shell::getShellSurface(view->surface);
                     if (shsurf) {
                         seat->activate(shsurf);
                         return;
@@ -142,12 +142,10 @@ void ShellSeat::popup_grab_focus(struct weston_pointer_grab *grab)
     ShellSeat *shseat = static_cast<PopupGrab *>(container_of(grab, PopupGrab, grab))->seat;
 
     wl_fixed_t sx, sy;
-    struct weston_surface *surface = weston_compositor_pick_surface(pointer->seat->compositor,
-                                                                    pointer->x, pointer->y,
-                                                                    &sx, &sy);
+    weston_view *view = weston_compositor_pick_view(pointer->seat->compositor, pointer->x, pointer->y, &sx, &sy);
 
-    if (surface && wl_resource_get_client(surface->resource) == shseat->m_popupGrab.client) {
-        weston_pointer_set_focus(pointer, surface, sx, sy);
+    if (view && wl_resource_get_client(view->surface->resource) == shseat->m_popupGrab.client) {
+        weston_pointer_set_focus(pointer, view, sx, sy);
     } else {
         weston_pointer_set_focus(pointer, NULL, wl_fixed_from_int(0), wl_fixed_from_int(0));
     }
@@ -158,7 +156,7 @@ static void popup_grab_motion(struct weston_pointer_grab *grab,  uint32_t time)
     struct wl_resource *resource;
     wl_resource_for_each(resource, &grab->pointer->focus_resource_list) {
         wl_fixed_t sx, sy;
-        weston_surface_from_global_fixed(grab->pointer->focus, grab->pointer->x, grab->pointer->y, &sx, &sy);
+        weston_view_from_global_fixed(grab->pointer->focus, grab->pointer->x, grab->pointer->y, &sx, &sy);
         wl_pointer_send_motion(resource, time, sx, sy);
     }
 }
@@ -188,6 +186,7 @@ const struct weston_pointer_grab_interface ShellSeat::popup_grab_interface = {
     ShellSeat::popup_grab_focus,
     popup_grab_motion,
     ShellSeat::popup_grab_button,
+    [](weston_pointer_grab *grab) {}
 };
 
 bool ShellSeat::addPopupGrab(ShellSurface *surface, uint32_t serial)

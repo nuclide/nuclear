@@ -258,7 +258,7 @@ public:
     Panel *panel;
 
     void focus() override {}
-    void motion(uint32_t time) override;
+    void motion(uint32_t time, wl_fixed_t x, wl_fixed_t y) override;
     void button(uint32_t time, uint32_t button, uint32_t state) override;
 };
 
@@ -303,8 +303,10 @@ public:
     static struct desktop_shell_panel_interface s_implementation;
 };
 
-void PanelGrab::motion(uint32_t time)
+void PanelGrab::motion(uint32_t time, wl_fixed_t px, wl_fixed_t py)
 {
+    weston_pointer_move(pointer(), px, py);
+
     weston_output *out = panel->m_surface->output;
     if (!out) {
         delete this;
@@ -436,8 +438,10 @@ public:
         if (inside)
             weston_pointer_set_focus(pointer(), view, sx, sy);
     }
-    void motion(uint32_t time) override
+    void motion(uint32_t time, wl_fixed_t x, wl_fixed_t y) override
     {
+        weston_pointer_move(pointer(), x, y);
+
         wl_resource *resource;
         wl_resource_for_each(resource, &pointer()->focus_resource_list) {
             wl_fixed_t sx, sy;
@@ -609,8 +613,10 @@ public:
             desktop_shell_grab_send_focus(resource, view->surface->resource, sx, sy);
         }
     }
-    void motion(uint32_t time) override
+    void motion(uint32_t time, wl_fixed_t x, wl_fixed_t y) override
     {
+        weston_pointer_move(pointer(), x, y);
+
         wl_fixed_t sx = pointer()->x;
         wl_fixed_t sy = pointer()->y;
         if (surfFocus) {

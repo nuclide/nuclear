@@ -97,7 +97,7 @@ ShellGrab *ShellGrab::fromGrab(weston_pointer_grab *grab)
 
 const weston_pointer_grab_interface ShellGrab::s_shellGrabInterface = {
     [](weston_pointer_grab *base)                                                 { ShellGrab::fromGrab(base)->focus(); },
-    [](weston_pointer_grab *base, uint32_t time)                                  { ShellGrab::fromGrab(base)->motion(time); },
+    [](weston_pointer_grab *base, uint32_t time, wl_fixed_t x, wl_fixed_t y)      { ShellGrab::fromGrab(base)->motion(time, x, y); },
     [](weston_pointer_grab *base, uint32_t time, uint32_t button, uint32_t state) { ShellGrab::fromGrab(base)->button(time, button, state); },
     [](weston_pointer_grab *base)                                                 { ShellGrab::fromGrab(base)->cancel(); }
 };

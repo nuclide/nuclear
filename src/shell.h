@@ -50,7 +50,7 @@ public:
 
 protected:
     virtual void focus() {}
-    virtual void motion(uint32_t time) {}
+    virtual void motion(uint32_t time, wl_fixed_t x, wl_fixed_t y) {}
     virtual void button(uint32_t time, uint32_t button, uint32_t state) {}
     virtual void cancel() {}
 

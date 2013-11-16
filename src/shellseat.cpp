@@ -151,8 +151,10 @@ void ShellSeat::popup_grab_focus(struct weston_pointer_grab *grab)
     }
 }
 
-static void popup_grab_motion(struct weston_pointer_grab *grab,  uint32_t time)
+static void popup_grab_motion(weston_pointer_grab *grab,  uint32_t time, wl_fixed_t x, wl_fixed_t y)
 {
+    weston_pointer_move(grab->pointer, x, y);
+
     struct wl_resource *resource;
     wl_resource_for_each(resource, &grab->pointer->focus_resource_list) {
         wl_fixed_t sx, sy;

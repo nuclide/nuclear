@@ -569,8 +569,10 @@ void ShellSurface::destroyPingTimer()
 class MoveGrab : public ShellGrab
 {
 public:
-    void motion(uint32_t time) override
+    void motion(uint32_t time, wl_fixed_t x, wl_fixed_t y) override
     {
+        weston_pointer_move(pointer(), x, y);
+
         int dx = wl_fixed_to_int(pointer()->x + this->dx);
         int dy = wl_fixed_to_int(pointer()->y + this->dy);
 
@@ -640,8 +642,10 @@ void ShellSurface::dragMove(struct weston_seat *ws)
 class ResizeGrab : public ShellGrab
 {
 public:
-    void motion(uint32_t time) override
+    void motion(uint32_t time, wl_fixed_t x, wl_fixed_t y) override
     {
+        weston_pointer_move(pointer(), x, y);
+
         if (!shsurf)
             return;
 

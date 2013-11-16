@@ -156,6 +156,10 @@ protected:
     void addWorkspace(Workspace *ws);
     virtual void panelConfigure(struct weston_surface *es, int32_t sx, int32_t sy, int32_t width, int32_t height, PanelPosition pos);
 
+    virtual void defaultPointerGrabFocus(weston_pointer_grab *grab);
+    virtual void defaultPointerGrabMotion(weston_pointer_grab *grab, uint32_t time, wl_fixed_t x, wl_fixed_t y);
+    virtual void defaultPointerGrabButton(weston_pointer_grab *grab, uint32_t time, uint32_t button, uint32_t state);
+
     struct Child {
         Shell *shell;
         struct weston_process process;
@@ -209,6 +213,7 @@ private:
 
     static const struct wl_shell_interface shell_implementation;
     static const struct weston_shell_client shell_client;
+    static const weston_pointer_grab_interface s_defaultPointerGrabInterface;
 
     friend class Effect;
 };

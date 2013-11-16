@@ -114,6 +114,81 @@ Binding::~Binding()
 }
 
 
+static void black_surface_configure(weston_surface *es, int32_t sx, int32_t sy, int32_t width, int32_t height)
+{
+}
+
+void Shell::defaultPointerGrabFocus(weston_pointer_grab *grab)
+{
+    weston_pointer *pointer = grab->pointer;
+
+    if (pointer->button_count > 0) {
+        return;
+    }
+
+    wl_fixed_t sx, sy;
+    weston_view *view = weston_compositor_pick_view(pointer->seat->compositor, pointer->x, pointer->y, &sx, &sy);
+
+    if (view && view->surface->configure == &black_surface_configure) {
+        view = static_cast<ShellSurface *>(view->surface->configure_private)->view();
+    }
+    if (pointer->focus != view) {
+        weston_pointer_set_focus(pointer, view, sx, sy);
+    }
+}
+
+void Shell::defaultPointerGrabMotion(weston_pointer_grab *grab, uint32_t time, wl_fixed_t x, wl_fixed_t y)
+{
+    weston_pointer *pointer = grab->pointer;
+
+    weston_pointer_move(pointer, x, y);
+
+    wl_list *resource_list = &pointer->focus_resource_list;
+    wl_resource *resource;
+    wl_resource_for_each(resource, resource_list) {
+        wl_fixed_t sx, sy;
+        weston_view_from_global_fixed(pointer->focus, pointer->x, pointer->y, &sx, &sy);
+        wl_pointer_send_motion(resource, time, sx, sy);
+    }
+}
+
+void Shell::defaultPointerGrabButton(weston_pointer_grab *grab, uint32_t time, uint32_t button, uint32_t state_w)
+{
+    weston_pointer *pointer = grab->pointer;
+    weston_compositor *compositor = pointer->seat->compositor;
+
+    wl_list *resource_list = &pointer->focus_resource_list;
+    if (!wl_list_empty(resource_list)) {
+        wl_display *display = compositor->wl_display;
+        wl_resource *resource;
+        uint32_t serial = wl_display_next_serial(display);
+        wl_resource_for_each(resource, resource_list) {
+            wl_pointer_send_button(resource, serial, time, button, state_w);
+        }
+    }
+
+    if (pointer->button_count == 0 && state_w == WL_POINTER_BUTTON_STATE_RELEASED) {
+        wl_fixed_t sx, sy;
+        weston_view *view = weston_compositor_pick_view(compositor, pointer->x, pointer->y, &sx, &sy);
+        weston_pointer_set_focus(pointer, view, sx, sy);
+    }
+}
+
+static void default_grab_pointer_cancel(weston_pointer_grab *grab) {}
+
+static Shell *shellFromPointer(weston_pointer_grab *grab)
+{
+    return static_cast<Shell *>(grab->pointer->seat->compositor->shell_interface.shell);
+}
+
+const weston_pointer_grab_interface Shell::s_defaultPointerGrabInterface = {
+    [](weston_pointer_grab *g)                                                   { shellFromPointer(g)->defaultPointerGrabFocus(g); },
+    [](weston_pointer_grab *g, uint32_t time, wl_fixed_t x, wl_fixed_t y)        { shellFromPointer(g)->defaultPointerGrabMotion(g, time, x, y); },
+    [](weston_pointer_grab *g, uint32_t time, uint32_t button, uint32_t state_w) { shellFromPointer(g)->defaultPointerGrabButton(g, time, button, state_w); },
+    default_grab_pointer_cancel,
+};
+
+
 Shell::Shell(struct weston_compositor *ec)
             : m_compositor(ec)
             , m_windowsMinimized(false)
@@ -138,11 +213,6 @@ void Shell::destroy()
     delete this;
 }
 
-static void
-black_surface_configure(struct weston_surface *es, int32_t sx, int32_t sy, int32_t width, int32_t height)
-{
-}
-
 void Shell::init()
 {
 #define _this reinterpret_cast<ShellSurface *>(shsurf)
@@ -158,6 +228,7 @@ void Shell::init()
     m_compositor->shell_interface.set_xwayland = [](shell_surface *shsurf, int x, int y, uint32_t flags) { _this->setXWayland(x, y, flags); };
     m_compositor->shell_interface.set_title = [](shell_surface *shsurf, const char *t) { _this->setTitle(t); };
 #undef _this
+    weston_compositor_set_default_pointer_grab(m_compositor, &s_defaultPointerGrabInterface);
 
     m_destroyListener.listen(&m_compositor->destroy_signal);
     m_destroyListener.signal->connect(this, &Shell::destroy);

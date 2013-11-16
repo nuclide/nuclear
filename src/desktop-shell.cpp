@@ -350,6 +350,13 @@ void PanelGrab::motion(uint32_t time)
 
 void PanelGrab::button(uint32_t time, uint32_t button, uint32_t state)
 {
+    wl_resource *resource;
+    wl_resource_for_each(resource, &pointer()->focus_resource_list) {
+        struct wl_display *display = wl_client_get_display(wl_resource_get_client(resource));
+        uint32_t serial = wl_display_get_serial(display);
+        wl_pointer_send_button(resource, serial, time, button, state);
+    }
+
     panel->m_grab = nullptr;
     delete this;
 }

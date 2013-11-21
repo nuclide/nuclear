@@ -28,6 +28,10 @@
 #include "wayland-desktop-shell-server-protocol.h"
 
 struct DGrab : public ShellGrab {
+    void motion(uint32_t time, wl_fixed_t x, wl_fixed_t y) override
+    {
+        weston_pointer_move(pointer(), x, y);
+    }
     void button(uint32_t time, uint32_t button, uint32_t state) override
     {
         if (state == WL_POINTER_BUTTON_STATE_PRESSED) {

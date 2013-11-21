@@ -47,6 +47,10 @@ struct SurfaceTransform {
 };
 
 struct Grab : public ShellGrab {
+    void motion(uint32_t time, wl_fixed_t x, wl_fixed_t y) override
+    {
+        weston_pointer_move(pointer(), x, y);
+    }
     void focus() override
     {
         Workspace *currWs = shell()->currentWorkspace();

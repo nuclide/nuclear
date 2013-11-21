@@ -18,16 +18,18 @@
 #include "zoomeffect.h"
 #include "shell.h"
 #include "utils.h"
+#include "binding.h"
 
 ZoomEffect::ZoomEffect(Shell *shell)
           : Effect(shell)
 {
-    m_binding = shell->bindAxis(WL_POINTER_AXIS_VERTICAL_SCROLL, MODIFIER_SUPER, &ZoomEffect::run, this);
+    Binding *b = new Binding(Binding::Type::Axis);
+    b->axisTriggered.connect(this, &ZoomEffect::run);
+    addBinding("Zoom", b);
 }
 
 ZoomEffect::~ZoomEffect()
 {
-    delete m_binding;
 }
 
 void ZoomEffect::run(struct weston_seat *seat, uint32_t time, uint32_t axis, wl_fixed_t value)

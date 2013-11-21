@@ -32,19 +32,17 @@ public:
     GridDesktops(Shell *shell);
     ~GridDesktops();
 
-    virtual void run(struct weston_seat *seat, uint32_t time, uint32_t key);
-    void end(ShellSurface *surface);
-
 private:
     void run(struct weston_seat *ws);
+    void run(struct weston_seat *seat, uint32_t time, uint32_t key);
+    void end(ShellSurface *surface);
 
     bool m_scaled;
     struct weston_seat *m_seat;
-    struct Grab *m_grab;
-    Binding *m_binding;
+    struct DGrab *m_grab;
     int m_setWs;
 
-    friend Grab;
+    friend DGrab;
 };
 
 #endif

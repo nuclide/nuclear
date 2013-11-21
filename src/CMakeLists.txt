@@ -22,6 +22,7 @@ set(SOURCES
     animation.cpp
     desktop-shell.cpp
     inputpanel.cpp
+    binding.cpp
     effects/scaleeffect.cpp
     effects/griddesktops.cpp
     effects/zoomeffect.cpp

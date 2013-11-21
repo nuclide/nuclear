@@ -28,6 +28,7 @@
 #include "desktop-shell.h"
 #include "wayland-desktop-shell-server-protocol.h"
 #include "shellsurface.h"
+#include "binding.h"
 
 #include "scaleeffect.h"
 #include "griddesktops.h"
@@ -62,10 +63,13 @@ void DesktopShell::init()
                                              static_cast<DesktopShell *>(data)->resizeBinding(seat, time, button);
                                          }, this);
 
-    new ScaleEffect(this);
-    new GridDesktops(this);
+    Effect *e = new ScaleEffect(this);
+    e->binding("Toggle")->bindKey(KEY_E, MODIFIER_CTRL);
+    e = new GridDesktops(this);
+    e->binding("Toggle")->bindKey(KEY_G, MODIFIER_CTRL);
     new FadeMovingEffect(this);
-    new ZoomEffect(this);
+    e = new ZoomEffect(this);
+    e->binding("Zoom")->bindAxis(WL_POINTER_AXIS_VERTICAL_SCROLL, MODIFIER_SUPER);
     new InOutSurfaceEffect(this);
     new MinimizeEffect(this);
 

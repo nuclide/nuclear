@@ -17,11 +17,19 @@
 
 #include "effect.h"
 #include "shell.h"
+#include "binding.h"
 
 Effect::Effect(Shell *shell)
       : m_shell(shell)
 {
     shell->registerEffect(this);
+}
+
+Effect::~Effect()
+{
+    for (Bindings::value_type v: m_bindings) {
+        delete v.second;
+    }
 }
 
 void Effect::addSurface(ShellSurface *surf)
@@ -32,4 +40,14 @@ void Effect::addSurface(ShellSurface *surf)
 void Effect::removeSurface(ShellSurface *surf)
 {
     removedSurface(surf);
+}
+
+Binding *Effect::binding(const std::string &name)
+{
+    return m_bindings[name];
+}
+
+void Effect::addBinding(const std::string &n, Binding *b)
+{
+    m_bindings[n] = b;
 }

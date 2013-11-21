@@ -101,17 +101,8 @@ const weston_pointer_grab_interface ShellGrab::s_shellGrabInterface = {
     [](weston_pointer_grab *base, uint32_t time, uint32_t button, uint32_t state) { ShellGrab::fromGrab(base)->button(time, button, state); }
 };
 
-Binding::Binding(struct weston_binding *binding)
-       : m_binding(binding)
-{
 
-}
-
-Binding::~Binding()
-{
-    weston_binding_destroy(m_binding);
-}
-
+Shell *Shell::s_instance = nullptr;
 
 Shell::Shell(struct weston_compositor *ec)
             : m_compositor(ec)
@@ -119,6 +110,8 @@ Shell::Shell(struct weston_compositor *ec)
             , m_quitting(false)
             , m_grabSurface(nullptr)
 {
+    s_instance = this;
+
     srandom(weston_compositor_get_time());
     m_child.shell = this;
     m_child.deathstamp = 0;
@@ -201,9 +194,9 @@ void Shell::init()
                                          [](struct weston_seat *seat, uint32_t time, uint32_t button, void *data) {
                                              static_cast<Shell *>(data)->activateSurface(seat, time, button); }, this);
 
-    bindKey(KEY_LEFT, MODIFIER_CTRL, [](struct weston_seat *seat, uint32_t time, uint32_t key, void *data) {
+    weston_compositor_add_key_binding(compositor(), KEY_LEFT, MODIFIER_CTRL, [](struct weston_seat *seat, uint32_t time, uint32_t key, void *data) {
                                             static_cast<Shell *>(data)->selectPreviousWorkspace(); }, this);
-    bindKey(KEY_RIGHT, MODIFIER_CTRL, [](struct weston_seat *seat, uint32_t time, uint32_t key, void *data) {
+    weston_compositor_add_key_binding(compositor(), KEY_RIGHT, MODIFIER_CTRL, [](struct weston_seat *seat, uint32_t time, uint32_t key, void *data) {
                                             static_cast<Shell *>(data)->selectNextWorkspace(); }, this);
 }
 
@@ -566,11 +559,6 @@ void Shell::removeShellSurface(ShellSurface *surface)
         e->removeSurface(surface);
     }
     m_surfaces.remove(surface);
-}
-
-Binding *Shell::bindKey(uint32_t key, enum weston_keyboard_modifier modifier, weston_key_binding_handler_t handler, void *data)
-{
-    return new Binding(weston_compositor_add_key_binding(compositor(), key, modifier, handler, data));
 }
 
 void Shell::registerEffect(Effect *effect)

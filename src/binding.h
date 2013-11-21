@@ -15,39 +15,32 @@
  * License along with this library.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef SCALEEFFECT_H
-#define SCALEEFFECT_H
+#ifndef BINDING_H
+#define BINDING_H
 
-#include <list>
+#include <weston/compositor.h>
 
-#include "effect.h"
+#include "shellsignal.h"
 
-class ShellGrab;
-class Animation;
-class Binding;
+struct weston_seat;
 
-class ScaleEffect : public Effect
-{
+class Binding {
 public:
-    ScaleEffect(Shell *shell);
-    ~ScaleEffect();
+    enum class Type {
+        Key = 0,
+        Axis = 1
+    };
+    explicit Binding(Type t);
+    ~Binding();
 
-protected:
-    virtual void addedSurface(ShellSurface *surf);
-    virtual void removedSurface(ShellSurface *surf);
+    void bindKey(uint32_t key, weston_keyboard_modifier modifier);
+    void bindAxis(uint32_t axis, weston_keyboard_modifier modifier);
+
+    Signal<weston_seat *, uint32_t, uint32_t> keyTriggered;
+    Signal<weston_seat *, uint32_t, uint32_t, wl_fixed_t> axisTriggered;
 
 private:
-    void run(struct weston_seat *ws);
-    void run(struct weston_seat *seat, uint32_t time, uint32_t key);
-    void end(ShellSurface *surface);
-
-    bool m_scaled;
-    std::list<struct SurfaceTransform *> m_surfaces;
-    struct weston_seat *m_seat;
-    struct Grab *m_grab;
-    ShellSurface *m_chosenSurface;
-
-    friend Grab;
+    weston_binding *m_binding;
 };
 
 #endif

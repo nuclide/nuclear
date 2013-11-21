@@ -18,16 +18,25 @@
 #ifndef EFFECT_H
 #define EFFECT_H
 
+#include <unordered_map>
+
 #include <weston/compositor.h>
 
 class Shell;
 class ShellSurface;
+class Binding;
 
 class Effect {
 public:
+    typedef std::unordered_map<std::string, Binding *> Bindings;
+
     Effect(Shell *shell);
+    virtual ~Effect();
     void addSurface(ShellSurface *surf);
     void removeSurface(ShellSurface *surf);
+
+    const Bindings &bindings() const { return m_bindings; }
+    Binding *binding(const std::string &name);
 
 protected:
     virtual void addedSurface(ShellSurface *surf) {}
@@ -35,8 +44,11 @@ protected:
 
     inline Shell *shell() const { return m_shell; }
 
+    void addBinding(const std::string &n, Binding *b);
+
 private:
     Shell *m_shell;
+    Bindings m_bindings;
 
 };
 

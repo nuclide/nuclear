@@ -23,6 +23,7 @@
 #include "animation.h"
 #include "animationcurve.h"
 #include "shellseat.h"
+#include "binding.h"
 
 #include "wayland-desktop-shell-server-protocol.h"
 
@@ -95,12 +96,13 @@ ScaleEffect::ScaleEffect(Shell *shell)
            , m_grab(new Grab)
 {
     m_grab->effect = this;
-    m_binding = shell->bindKey(KEY_E, MODIFIER_CTRL, &ScaleEffect::run, this);
+    Binding *b = new Binding(Binding::Type::Key);
+    b->keyTriggered.connect(this, &ScaleEffect::run);
+    addBinding("Toggle", b);
 }
 
 ScaleEffect::~ScaleEffect()
 {
-    delete m_binding;
 }
 
 void ScaleEffect::run(struct weston_seat *seat, uint32_t time, uint32_t key)

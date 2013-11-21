@@ -23,10 +23,11 @@
 #include "animation.h"
 #include "workspace.h"
 #include "transform.h"
+#include "binding.h"
 
 #include "wayland-desktop-shell-server-protocol.h"
 
-struct Grab : public ShellGrab {
+struct DGrab : public ShellGrab {
     void button(uint32_t time, uint32_t button, uint32_t state) override
     {
         if (state == WL_POINTER_BUTTON_STATE_PRESSED) {
@@ -54,15 +55,16 @@ struct Grab : public ShellGrab {
 GridDesktops::GridDesktops(Shell *shell)
            : Effect(shell)
            , m_scaled(false)
-           , m_grab(new Grab)
+           , m_grab(new DGrab)
 {
     m_grab->effect = this;
-    m_binding = shell->bindKey(KEY_G, MODIFIER_CTRL, &GridDesktops::run, this);
+    Binding *b = new Binding(Binding::Type::Key);
+    b->keyTriggered.connect(this, &GridDesktops::run);
+    addBinding("Toggle", b);
 }
 
 GridDesktops::~GridDesktops()
 {
-    delete m_binding;
 }
 
 void GridDesktops::run(struct weston_seat *seat, uint32_t time, uint32_t key)

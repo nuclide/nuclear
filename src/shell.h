@@ -67,19 +67,6 @@ private:
     friend class Shell;
 };
 
-class Binding {
-public:
-    virtual ~Binding();
-
-protected:
-    explicit Binding(struct weston_binding *binding);
-
-private:
-    struct weston_binding *m_binding;
-
-    friend class Shell;
-};
-
 class Shell {
 public:
     enum class PanelPosition {
@@ -99,15 +86,6 @@ public:
     void removeShellSurface(ShellSurface *surface);
     static ShellSurface *getShellSurface(const struct weston_surface *surf);
     static weston_view *defaultView(const weston_surface *surface);
-    Binding *bindKey(uint32_t key, enum weston_keyboard_modifier modifier, weston_key_binding_handler_t handler, void *data);
-    template<class T>
-    Binding *bindKey(uint32_t key, enum weston_keyboard_modifier modifier,
-                                   void (T::*func)(struct weston_seat *seat, uint32_t time, uint32_t key), T *obj);
-
-    Binding *bindAxis(uint32_t axis, enum weston_keyboard_modifier modifier, weston_axis_binding_handler_t handler, void *data);
-    template<class T>
-    Binding *bindAxis(uint32_t axis, enum weston_keyboard_modifier modifier,
-                      void (T::*func)(struct weston_seat *seat, uint32_t time, uint32_t axis, wl_fixed_t value), T *obj);
 
     void registerEffect(Effect *effect);
 
@@ -143,6 +121,8 @@ public:
 
     struct wl_client *shellClient() { return m_child.client; }
     struct wl_resource *shellClientResource() { return m_child.desktop_shell; }
+
+    static Shell *instance() { return s_instance; }
 
 protected:
     Shell(struct weston_compositor *ec);
@@ -214,6 +194,7 @@ private:
     static const struct wl_shell_interface shell_implementation;
     static const struct weston_shell_client shell_client;
     static const weston_pointer_grab_interface s_defaultPointerGrabInterface;
+    static Shell *s_instance;
 
     friend class Effect;
 };
@@ -228,44 +209,6 @@ Shell *Shell::load(struct weston_compositor *ec, char *client)
     }
 
     return shell;
-}
-
-template<class T, class... Args>
-class MemberBinding : public Binding {
-public:
-
-private:
-    typedef void (T::*Func)(Args...);
-
-    MemberBinding(T *obj, Func func) : Binding(nullptr), m_obj(obj), m_func(func) {}
-    static void handler(Args... args, void *data) {
-        MemberBinding<T, Args...> *bind = static_cast<MemberBinding<T, Args...> *>(data);
-        (bind->m_obj->*bind->m_func)(args...);
-    }
-
-    T *m_obj;
-    Func m_func;
-
-    friend class Shell;
-};
-
-template<class T>
-Binding *Shell::bindKey(uint32_t key, enum weston_keyboard_modifier modifier,
-                        void (T::*func)(struct weston_seat *seat, uint32_t time, uint32_t key), T *obj) {
-    MemberBinding<T, struct weston_seat *, uint32_t, uint32_t> *binding = new MemberBinding<T, struct weston_seat *, uint32_t, uint32_t>(obj, func);
-    binding->m_binding = weston_compositor_add_key_binding(m_compositor, key, modifier,
-                                                           MemberBinding<T, struct weston_seat *, uint32_t, uint32_t>::handler, binding);
-    return binding;
-}
-
-template<class T>
-Binding *Shell::bindAxis(uint32_t axis, enum weston_keyboard_modifier modifier,
-                         void (T::*func)(struct weston_seat *seat, uint32_t time, uint32_t axis, wl_fixed_t value), T *obj) {
-    MemberBinding<T, struct weston_seat *, uint32_t, uint32_t, wl_fixed_t> *binding =
-    new MemberBinding<T, struct weston_seat *, uint32_t, uint32_t, wl_fixed_t>(obj, func);
-    binding->m_binding = weston_compositor_add_axis_binding(m_compositor, axis, modifier,
-                         MemberBinding<T, struct weston_seat *, uint32_t, uint32_t, wl_fixed_t>::handler, binding);
-    return binding;
 }
 
 #endif

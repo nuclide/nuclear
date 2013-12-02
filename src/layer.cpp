@@ -110,9 +110,12 @@ void Layer::stackBelow(weston_view *surf, weston_view *parent)
     wl_list_insert(parent->layer_link.prev->prev, &surf->layer_link);
 }
 
-void Layer::restack(weston_view *surf)
+void Layer::restack(weston_view *view)
 {
-    weston_view_restack(surf, &m_layer.view_list);
+    wl_list_remove(&view->layer_link);
+    wl_list_insert(&m_layer.view_list, &view->layer_link);
+    weston_view_damage_below(view);
+    weston_surface_damage(view->surface);
 }
 
 void Layer::restack(ShellSurface *surf)

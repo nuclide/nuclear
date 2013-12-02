@@ -542,9 +542,10 @@ void Shell::configureFullscreen(ShellSurface *shsurf)
     } break;
     case WL_SHELL_SURFACE_FULLSCREEN_METHOD_DRIVER:
         if (surfaceIsTopFullscreen(shsurf)) {
-            struct weston_mode mode = {0, bbox.width * surface->buffer_scale, bbox.height * surface->buffer_scale, shsurf->m_fullscreen.framerate, { nullptr, nullptr } };
+            int32_t scale = surface->buffer_viewport.scale;
+            weston_mode mode = {0, bbox.width * scale, bbox.height * scale, shsurf->m_fullscreen.framerate, { nullptr, nullptr } };
 
-            if (weston_output_switch_mode(output, &mode, surface->buffer_scale, WESTON_MODE_SWITCH_SET_TEMPORARY) == 0) {
+            if (weston_output_switch_mode(output, &mode, scale, WESTON_MODE_SWITCH_SET_TEMPORARY) == 0) {
                 weston_view_set_position(view, output->x - bbox.x, output->y - bbox.y);
                 weston_view_configure(shsurf->m_fullscreen.blackView, output->x - bbox.x, output->y - bbox.y, output->width, output->height);
                 break;

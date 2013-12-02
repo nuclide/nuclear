@@ -496,8 +496,8 @@ void ShellSurface::unsetMaximized()
 
 void ShellSurface::centerOnOutput(struct weston_output *output)
 {
-    int32_t width = weston_surface_buffer_width(m_surface);
-    int32_t height = weston_surface_buffer_height(m_surface);
+    int32_t width = m_surface->width;
+    int32_t height = m_surface->height;
     float x, y;
 
     x = output->x + (output->width - width) / 2;

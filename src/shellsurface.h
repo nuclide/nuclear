@@ -48,7 +48,7 @@ public:
 
     void init(struct wl_client *client, uint32_t id);
     bool updateType();
-    void map(int32_t x, int32_t y, int32_t width, int32_t height);
+    void map(int32_t x, int32_t y);
     void unmapped();
     void advertize();
 
@@ -150,6 +150,7 @@ private:
     bool m_windowAdvertized;
     bool m_acceptState;
     ShellGrab *m_runningGrab;
+    int32_t m_lastWidth, m_lastHeight;
 
     struct weston_surface *m_parent;
     struct {

@@ -389,11 +389,11 @@ void DesktopShell::setPanel(wl_client *client, wl_resource *resource, uint32_t i
     desktop_shell_send_configure(resource, 0, surface_resource, surface->output->width, surface->output->height);
 }
 
-void DesktopShell::panelConfigure(weston_surface *es, int32_t sx, int32_t sy, int32_t width, int32_t height, Shell::PanelPosition pos)
+void DesktopShell::panelConfigure(weston_surface *es, int32_t sx, int32_t sy, Shell::PanelPosition pos)
 {
-    Shell::panelConfigure(es, sx, sy, width, height, pos);
+    Shell::panelConfigure(es, sx, sy, pos);
 
-    if (width == 0) {
+    if (es->width == 0) {
         return;
     }
 
@@ -491,9 +491,9 @@ static void popupDestroyed(wl_listener *listener, void *data)
     delete static_cast<Popup *>(surface->configure_private);
 }
 
-void DesktopShell::configurePopup(weston_surface *es, int32_t sx, int32_t sy, int32_t width, int32_t height)
+void DesktopShell::configurePopup(weston_surface *es, int32_t sx, int32_t sy)
 {
-    if (width == 0)
+    if (es->width == 0)
         return;
 
     Popup *p = static_cast<Popup *>(es->configure_private);
@@ -501,7 +501,7 @@ void DesktopShell::configurePopup(weston_surface *es, int32_t sx, int32_t sy, in
     Layer *layer = &shell->m_panelsLayer;
 
     weston_view *view = container_of(es->views.next, weston_view, surface_link);
-    weston_view_configure(view, p->parent->geometry.x + p->x, p->parent->geometry.y + p->y, width, height);
+    weston_view_set_position(view, p->parent->geometry.x + p->x, p->parent->geometry.y + p->y);
 
     if (wl_list_empty(&view->layer_link) || view->layer_link.next == view->layer_link.prev) {
         layer->addSurface(view);

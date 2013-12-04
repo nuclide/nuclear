@@ -89,7 +89,7 @@ public:
 
     void registerEffect(Effect *effect);
 
-    void configureSurface(ShellSurface *surface, int32_t sx, int32_t sy, int32_t width, int32_t height);
+    void configureSurface(ShellSurface *surface, int32_t sx, int32_t sy);
 
     void setBackgroundSurface(struct weston_surface *surface, struct weston_output *output);
     void setGrabSurface(struct weston_surface *surface);
@@ -134,7 +134,7 @@ protected:
     virtual void endBusyCursor(struct weston_seat *seat) {}
     void fadeSplash();
     void addWorkspace(Workspace *ws);
-    virtual void panelConfigure(struct weston_surface *es, int32_t sx, int32_t sy, int32_t width, int32_t height, PanelPosition pos);
+    virtual void panelConfigure(struct weston_surface *es, int32_t sx, int32_t sy, PanelPosition pos);
 
     virtual void defaultPointerGrabFocus(weston_pointer_grab *grab);
     virtual void defaultPointerGrabMotion(weston_pointer_grab *grab, uint32_t time, wl_fixed_t x, wl_fixed_t y);
@@ -160,7 +160,7 @@ private:
     void destroy();
     void bind(struct wl_client *client, uint32_t version, uint32_t id);
     void sigchld(int status);
-    void backgroundConfigure(struct weston_surface *es, int32_t sx, int32_t sy, int32_t width, int32_t height);
+    void backgroundConfigure(struct weston_surface *es, int32_t sx, int32_t sy);
     void activateSurface(struct weston_seat *seat, uint32_t time, uint32_t button);
     void configureFullscreen(ShellSurface *surface);
     void stackFullscreen(ShellSurface *surface);
@@ -189,7 +189,7 @@ private:
     class Splash *m_splash;
     weston_view *m_grabSurface;
 
-    static void staticPanelConfigure(weston_surface *es, int32_t sx, int32_t sy, int32_t width, int32_t height);
+    static void staticPanelConfigure(weston_surface *es, int32_t sx, int32_t sy);
 
     static const struct wl_shell_interface shell_implementation;
     static const struct weston_shell_client shell_client;

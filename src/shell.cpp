@@ -105,7 +105,7 @@ const weston_pointer_grab_interface ShellGrab::s_shellGrabInterface = {
 
 Shell *Shell::s_instance = nullptr;
 
-static void black_surface_configure(weston_surface *es, int32_t sx, int32_t sy, int32_t width, int32_t height)
+static void black_surface_configure(weston_surface *es, int32_t sx, int32_t sy)
 {
 }
 
@@ -321,7 +321,9 @@ weston_view *Shell::createBlackSurface(int x, int y, int w, int h)
     pixman_region32_fini(&surface->input);
     pixman_region32_init_rect(&surface->input, 0, 0, 0, 0);
 
-    weston_view_configure(view, x, y, w, h);
+    surface->width = w;
+    surface->height = h;
+    weston_view_set_position(view, x, y);
 
     return view;
 }
@@ -356,9 +358,9 @@ weston_view *Shell::defaultView(const weston_surface *surface)
     return container_of(surface->views.next, weston_view, surface_link);
 }
 
-void Shell::configureSurface(ShellSurface *surface, int32_t sx, int32_t sy, int32_t width, int32_t height)
+void Shell::configureSurface(ShellSurface *surface, int32_t sx, int32_t sy)
 {
-    if (width == 0) {
+    if (surface->width() == 0) {
         surface->unmapped();
         return;
     }
@@ -374,10 +376,10 @@ void Shell::configureSurface(ShellSurface *surface, int32_t sx, int32_t sy, int3
     if (!surface->isMapped()) {
         switch (surface->m_type) {
             case ShellSurface::Type::TopLevel:
-                surface->map(10 + random() % 400, 10 + random() % 400, width, height);
+                surface->map(10 + random() % 400, 10 + random() % 400);
                 break;
             default:
-                surface->map(surface->view()->geometry.x + sx, surface->view()->geometry.y + sy, width, height);
+                surface->map(surface->view()->geometry.x + sx, surface->view()->geometry.y + sy);
         }
 
         for (Effect *e: m_effects) {
@@ -434,7 +436,9 @@ void Shell::configureSurface(ShellSurface *surface, int32_t sx, int32_t sy, int3
                     surface->hide();
             }
         }
-    } else if (changedType || sx != 0 || sy != 0 || surface->width() != width || surface->height() != height) {
+    } else if (changedType || sx != 0 || sy != 0 || surface->width() != surface->m_lastWidth || surface->height() != surface->m_lastHeight) {
+        surface->m_lastWidth = surface->width();
+        surface->m_lastHeight = surface->height();
         float from_x, from_y;
         float to_x, to_y;
 
@@ -444,7 +448,7 @@ void Shell::configureSurface(ShellSurface *surface, int32_t sx, int32_t sy, int3
         int x = surface->x() + to_x - from_x;
         int y = surface->y() + to_y - from_y;
 
-        weston_view_configure(view, x, y, width, height);
+        weston_view_set_position(view, x, y);
 
         switch (surface->m_type) {
             case ShellSurface::Type::Fullscreen:
@@ -490,7 +494,9 @@ weston_view *Shell::createBlackSurface(ShellSurface *fs_surface, float x, float 
     pixman_region32_fini(&surface->input);
     pixman_region32_init_rect(&surface->input, 0, 0, w, h);
 
-    weston_view_configure(view, x, y, w, h);
+    surface->width = w;
+    surface->height = h;
+    weston_view_set_position(view, x, y);
 
     return view;
 }
@@ -547,7 +553,9 @@ void Shell::configureFullscreen(ShellSurface *shsurf)
 
             if (weston_output_switch_mode(output, &mode, scale, WESTON_MODE_SWITCH_SET_TEMPORARY) == 0) {
                 weston_view_set_position(view, output->x - bbox.x, output->y - bbox.y);
-                weston_view_configure(shsurf->m_fullscreen.blackView, output->x - bbox.x, output->y - bbox.y, output->width, output->height);
+                shsurf->m_fullscreen.blackView->surface->width = output->width;
+                shsurf->m_fullscreen.blackView->surface->height = output->height;
+                weston_view_set_position(shsurf->m_fullscreen.blackView, output->x - bbox.x, output->y - bbox.y);
                 break;
             }
         }
@@ -588,11 +596,11 @@ bool Shell::isInFullscreen() const
     return m_fullscreenLayer.isVisible();
 }
 
-static void shell_surface_configure(struct weston_surface *surf, int32_t sx, int32_t sy, int32_t w, int32_t h)
+static void shell_surface_configure(struct weston_surface *surf, int32_t sx, int32_t sy)
 {
     ShellSurface *shsurf = Shell::getShellSurface(surf);
     if (shsurf) {
-        shsurf->shell()->configureSurface(shsurf, sx, sy, w, h);
+        shsurf->shell()->configureSurface(shsurf, sx, sy);
     }
 }
 
@@ -709,14 +717,14 @@ void Shell::startGrab(ShellGrab *grab, weston_seat *seat, int32_t cursor)
     }
 }
 
-static void configure_static_surface(struct weston_surface *es, Layer *layer, int32_t width, int32_t height)
+static void configure_static_surface(struct weston_surface *es, Layer *layer)
 {
-    if (width == 0)
+    if (es->width == 0)
         return;
 
     weston_view *view = container_of(es->views.next, weston_view, surface_link);
 
-    weston_view_configure(view, view->geometry.x, view->geometry.y, width, height);
+    weston_view_set_position(view, view->geometry.x, view->geometry.y);
 
     if (wl_list_empty(&view->layer_link) || view->layer_link.next == view->layer_link.prev) {
         layer->addSurface(view);
@@ -724,14 +732,14 @@ static void configure_static_surface(struct weston_surface *es, Layer *layer, in
     }
 }
 
-void Shell::backgroundConfigure(struct weston_surface *es, int32_t sx, int32_t sy, int32_t width, int32_t height)
+void Shell::backgroundConfigure(struct weston_surface *es, int32_t sx, int32_t sy)
 {
-    configure_static_surface(es, &m_backgroundLayer, width, height);
+    configure_static_surface(es, &m_backgroundLayer);
 }
 
-void Shell::panelConfigure(weston_surface *es, int32_t sx, int32_t sy, int32_t width, int32_t height, PanelPosition pos)
+void Shell::panelConfigure(weston_surface *es, int32_t sx, int32_t sy, PanelPosition pos)
 {
-    if (width == 0)
+    if (es->width == 0)
         return;
 
     weston_output *output = es->output;
@@ -747,15 +755,15 @@ void Shell::panelConfigure(weston_surface *es, int32_t sx, int32_t sy, int32_t w
                 break;
             case PanelPosition::Right:
                 y = output->y;
-                x = output->x + output->width - width;
+                x = output->x + output->width - es->width;
                 break;
             case PanelPosition::Bottom:
                 x = output->x;
-                y = output->y + output->height - height;
+                y = output->y + output->height - es->height;
                 break;
         }
     }
-    weston_view_configure(view, x, y, width, height);
+    weston_view_set_position(view, x, y);
 
     if (wl_list_empty(&view->layer_link) || view->layer_link.next == view->layer_link.prev) {
         m_panelsLayer.addSurface(view);
@@ -765,8 +773,8 @@ void Shell::panelConfigure(weston_surface *es, int32_t sx, int32_t sy, int32_t w
 
 void Shell::setBackgroundSurface(struct weston_surface *surface, struct weston_output *output)
 {
-    surface->configure = [](struct weston_surface *es, int32_t sx, int32_t sy, int32_t width, int32_t height) {
-        static_cast<Shell *>(es->configure_private)->backgroundConfigure(es, sx, sy, width, height); };
+    surface->configure = [](struct weston_surface *es, int32_t sx, int32_t sy) {
+        static_cast<Shell *>(es->configure_private)->backgroundConfigure(es, sx, sy); };
     surface->configure_private = this;
     surface->output = output;
     weston_view *view = weston_view_create(surface);
@@ -801,9 +809,9 @@ static void panelDestroyed(wl_listener *listener, void *data)
     delete static_cast<Panel *>(surface->configure_private);
 }
 
-void Shell::staticPanelConfigure(weston_surface *es, int32_t sx, int32_t sy, int32_t width, int32_t height) {
+void Shell::staticPanelConfigure(weston_surface *es, int32_t sx, int32_t sy) {
     Panel *p = static_cast<Panel *>(es->configure_private);
-    p->shell->panelConfigure(es, sx, sy, width, height, p->pos);
+    p->shell->panelConfigure(es, sx, sy, p->pos);
 }
 
 void Shell::addPanelSurface(weston_surface *surface, weston_output *output, PanelPosition pos)
@@ -827,8 +835,8 @@ void Shell::addPanelSurface(weston_surface *surface, weston_output *output, Pane
 
 void Shell::addOverlaySurface(struct weston_surface *surface, struct weston_output *output)
 {
-    surface->configure = [](struct weston_surface *es, int32_t sx, int32_t sy, int32_t width, int32_t height) {
-        configure_static_surface(es, &static_cast<Shell *>(es->configure_private)->m_overlayLayer, width, height); };
+    surface->configure = [](struct weston_surface *es, int32_t sx, int32_t sy) {
+        configure_static_surface(es, &static_cast<Shell *>(es->configure_private)->m_overlayLayer); };
     surface->configure_private = this;
     surface->output = output;
     weston_view *view = weston_view_create(surface);

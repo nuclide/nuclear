@@ -34,7 +34,7 @@ protected:
     virtual void setGrabCursor(uint32_t);
     virtual void setBusyCursor(ShellSurface *shsurf, struct weston_seat *seat) override;
     virtual void endBusyCursor(struct weston_seat *seat) override;
-    virtual void panelConfigure(weston_surface *es, int32_t sx, int32_t sy, int32_t width, int32_t height, Shell::PanelPosition pos) override;
+    virtual void panelConfigure(weston_surface *es, int32_t sx, int32_t sy, Shell::PanelPosition pos) override;
 
 private:
     void sendInitEvents();
@@ -59,7 +59,7 @@ private:
     void selectWorkspace(wl_client *client, wl_resource *resource, wl_resource *workspace_resource);
     void quit(wl_client *client, wl_resource *resource);
 
-    static void configurePopup(weston_surface *es, int32_t sx, int32_t sy, int32_t width, int32_t height);
+    static void configurePopup(weston_surface *es, int32_t sx, int32_t sy);
 
     static const struct desktop_shell_interface m_desktop_shell_implementation;
 

@@ -265,10 +265,8 @@ bool ShellSurface::updateType()
     return false;
 }
 
-void ShellSurface::map(int32_t x, int32_t y, int32_t width, int32_t height)
+void ShellSurface::map(int32_t x, int32_t y)
 {
-    m_view->geometry.width = width;
-    m_view->geometry.height = height;
     weston_view_geometry_dirty(m_view);
 
     switch (m_type) {
@@ -410,12 +408,12 @@ int32_t ShellSurface::y() const
 
 int32_t ShellSurface::width() const
 {
-    return m_view->geometry.width;
+    return m_surface->width;
 }
 
 int32_t ShellSurface::height() const
 {
-    return m_view->geometry.height;
+    return m_surface->height;
 }
 
 int32_t ShellSurface::transformedWidth() const
@@ -496,16 +494,11 @@ void ShellSurface::unsetMaximized()
 
 void ShellSurface::centerOnOutput(struct weston_output *output)
 {
-    int32_t width = m_surface->width;
-    int32_t height = m_surface->height;
-    float x, y;
+    float x = output->x + (output->width - width()) / 2;
+    float y = output->y + (output->height - height()) / 2;
 
-    x = output->x + (output->width - width) / 2;
-    y = output->y + (output->height - height) / 2;
-
-    weston_view_configure(m_view, x, y, width, height);
+    weston_view_set_position(m_view, x, y);
 }
-
 
 int ShellSurface::pingTimeout()
 {
@@ -580,7 +573,7 @@ public:
             return;
 
         weston_view *view = shsurf->view();
-        weston_view_configure(view, dx, dy, view->geometry.width, view->geometry.height);
+        weston_view_set_position(view, dx, dy);
         weston_compositor_schedule_repaint(shsurf->m_surface->compositor);
     }
     void button(uint32_t time, uint32_t button, uint32_t state_w) override

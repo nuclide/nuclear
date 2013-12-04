@@ -31,9 +31,11 @@ Workspace::Workspace(Shell *shell, int number)
 
     weston_surface *s = weston_surface_create(shell->compositor());
     m_rootSurface = weston_view_create(s);
-    s->configure = [](struct weston_surface *es, int32_t sx, int32_t sy, int32_t width, int32_t height) {};
+    s->configure = [](struct weston_surface *es, int32_t sx, int32_t sy) {};
     s->configure_private = 0;
-    weston_view_configure(m_rootSurface, x, y, w, h);
+    weston_view_set_position(m_rootSurface, x, y);
+    s->width = w;
+    s->height = h;
     weston_surface_set_color(s, 0.0, 0.0, 0.0, 1);
     pixman_region32_fini(&s->opaque);
     pixman_region32_init_rect(&s->opaque, 0, 0, w, h);

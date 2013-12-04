@@ -190,6 +190,7 @@ private:
     uint32_t m_currentWorkspace;
     bool m_windowsMinimized;
     bool m_quitting;
+    weston_surface *m_background;
 
     std::unordered_map<int, std::list<Binding *>> m_hotSpotBindings;
     uint32_t m_lastMotionTime;

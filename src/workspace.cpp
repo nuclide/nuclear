@@ -24,6 +24,7 @@
 Workspace::Workspace(Shell *shell, int number)
          : m_shell(shell)
          , m_number(number)
+         , m_background(nullptr)
          , m_active(false)
 {
     int x = 0, y = 0;
@@ -59,6 +60,7 @@ Workspace::~Workspace()
 
     remove();
     destroyedSignal(this);
+    weston_view_destroy(m_background);
     weston_surface_destroy(m_rootSurface->surface);
 }
 
@@ -66,6 +68,18 @@ void Workspace::init(wl_client *client)
 {
     m_resource = wl_resource_create(client, &desktop_shell_workspace_interface, 1, 0);
     wl_resource_set_implementation(m_resource, &s_implementation, this, 0);
+}
+
+void Workspace::createBackgroundView(weston_surface *bkg)
+{
+    if (m_background) {
+        weston_view_destroy(m_background);
+    }
+
+    m_background = weston_view_create(bkg);
+    weston_view_set_position(m_background, 0, 0);
+    m_backgroundLayer.addSurface(m_background);
+    weston_view_set_transform_parent(m_background, m_rootSurface);
 }
 
 void Workspace::addSurface(ShellSurface *surface)
@@ -110,16 +124,19 @@ struct weston_output *Workspace::output() const
 void Workspace::insert(Workspace *ws)
 {
     m_layer.insert(&ws->m_layer);
+    m_backgroundLayer.insert(&m_layer);
 }
 
 void Workspace::insert(Layer *layer)
 {
     m_layer.insert(layer);
+    m_backgroundLayer.insert(&m_layer);
 }
 
 void Workspace::insert(struct weston_layer *layer)
 {
     m_layer.insert(layer);
+    m_backgroundLayer.insert(&m_layer);
 }
 
 void Workspace::remove()

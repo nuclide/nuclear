@@ -238,6 +238,7 @@ Shell::Shell(struct weston_compositor *ec)
             : m_compositor(ec)
             , m_windowsMinimized(false)
             , m_quitting(false)
+            , m_background(nullptr)
             , m_lastMotionTime(0)
             , m_enterHotZone(0)
             , m_grabSurface(nullptr)
@@ -330,6 +331,9 @@ void Shell::init()
 
 void Shell::addWorkspace(Workspace *ws)
 {
+    if (m_background) {
+        ws->createBackgroundView(m_background);
+    }
     m_workspaces.push_back(ws);
     ws->destroyedSignal.connect(this, &Shell::workspaceRemoved);
     if (ws->number() == 0) {
@@ -790,7 +794,6 @@ static void configure_static_surface(struct weston_surface *es, Layer *layer)
 
 void Shell::backgroundConfigure(struct weston_surface *es, int32_t sx, int32_t sy)
 {
-    configure_static_surface(es, &m_backgroundLayer);
 }
 
 void Shell::panelConfigure(weston_surface *es, int32_t sx, int32_t sy, PanelPosition pos)
@@ -833,8 +836,11 @@ void Shell::setBackgroundSurface(struct weston_surface *surface, struct weston_o
         static_cast<Shell *>(es->configure_private)->backgroundConfigure(es, sx, sy); };
     surface->configure_private = this;
     surface->output = output;
-    weston_view *view = weston_view_create(surface);
-    weston_view_set_position(view, output->x, output->y);
+    m_background = surface;
+
+    for (Workspace *w: m_workspaces) {
+        w->createBackgroundView(surface);
+    }
 }
 
 void Shell::setGrabSurface(struct weston_surface *surface)

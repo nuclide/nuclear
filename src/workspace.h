@@ -32,6 +32,7 @@ public:
     ~Workspace();
 
     void init(wl_client *client);
+    void createBackgroundView(weston_surface *bkg);
 
     void addSurface(ShellSurface *surface);
     void restack(ShellSurface *surface);
@@ -65,7 +66,9 @@ private:
     int m_number;
     wl_resource *m_resource;
     weston_view *m_rootSurface;
+    weston_view *m_background;
     Transform m_transform;
+    Layer m_backgroundLayer;
     Layer m_layer;
     bool m_active;
 

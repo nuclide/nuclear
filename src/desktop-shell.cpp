@@ -65,8 +65,10 @@ void DesktopShell::init()
 
     Effect *e = new ScaleEffect(this);
     e->binding("Toggle")->bindKey(KEY_E, MODIFIER_CTRL);
+    e->binding("Toggle")->bindHotSpot(Binding::HotSpot::TopLeftCorner);
     e = new GridDesktops(this);
     e->binding("Toggle")->bindKey(KEY_G, MODIFIER_CTRL);
+    e->binding("Toggle")->bindHotSpot(Binding::HotSpot::TopRightCorner);
     new FadeMovingEffect(this);
     e = new ZoomEffect(this);
     e->binding("Zoom")->bindAxis(WL_POINTER_AXIS_VERTICAL_SCROLL, MODIFIER_SUPER);
@@ -444,7 +446,7 @@ public:
     }
     void motion(uint32_t time, wl_fixed_t x, wl_fixed_t y) override
     {
-        weston_pointer_move(pointer(), x, y);
+        ShellGrab::motion(time, x, y);
 
         wl_resource *resource;
         wl_resource_for_each(resource, &pointer()->focus_resource_list) {

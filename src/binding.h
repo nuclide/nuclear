@@ -28,19 +28,34 @@ class Binding {
 public:
     enum class Type {
         Key = 0,
-        Axis = 1
+        Axis = 1,
+        HotSpot = 2
+    };
+    enum class HotSpot {
+        TopLeftCorner,
+        TopRightCorner,
+        BottomLeftCorner,
+        BottomRightCorner
     };
     explicit Binding(Type t);
     ~Binding();
 
     void bindKey(uint32_t key, weston_keyboard_modifier modifier);
     void bindAxis(uint32_t axis, weston_keyboard_modifier modifier);
+    void bindHotSpot(HotSpot hs);
 
     Signal<weston_seat *, uint32_t, uint32_t> keyTriggered;
     Signal<weston_seat *, uint32_t, uint32_t, wl_fixed_t> axisTriggered;
+    Signal<weston_seat *, uint32_t, HotSpot> hotSpotTriggered;
 
 private:
     weston_binding *m_binding;
+    bool m_isHotSpot;
 };
+
+inline Binding::Type operator|(Binding::Type a, Binding::Type b)
+{
+    return (Binding::Type)((int)a | (int)b);
+}
 
 #endif

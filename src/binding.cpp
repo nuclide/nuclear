@@ -20,12 +20,16 @@
 
 Binding::Binding(Type t)
         : m_binding(nullptr)
+        , m_isHotSpot(false)
 {
 }
 
 Binding::~Binding()
 {
     weston_binding_destroy(m_binding);
+    if (m_isHotSpot) {
+        Shell::instance()->removeHotSpotBinding(this);
+    }
 }
 
 static void keyHandler(weston_seat *seat, uint32_t time, uint32_t key, void *data)
@@ -46,4 +50,10 @@ void Binding::bindKey(uint32_t key, weston_keyboard_modifier modifier)
 void Binding::bindAxis(uint32_t axis, weston_keyboard_modifier modifier)
 {
     m_binding = weston_compositor_add_axis_binding(Shell::instance()->compositor(), axis, modifier, axisHandler, this);
+}
+
+void Binding::bindHotSpot(HotSpot hs)
+{
+    m_isHotSpot = true;
+    Shell::instance()->bindHotSpot(hs, this);
 }

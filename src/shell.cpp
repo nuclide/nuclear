@@ -89,6 +89,11 @@ void ShellGrab::end()
     }
 }
 
+void ShellGrab::motion(uint32_t time, wl_fixed_t x, wl_fixed_t y)
+{
+    m_shell->movePointer(m_pointer, time, x, y);
+}
+
 ShellGrab *ShellGrab::fromGrab(weston_pointer_grab *grab)
 {
     Grab *wrapper = container_of(grab, Grab, base);
@@ -132,7 +137,7 @@ void Shell::defaultPointerGrabMotion(weston_pointer_grab *grab, uint32_t time, w
 {
     weston_pointer *pointer = grab->pointer;
 
-    weston_pointer_move(pointer, x, y);
+    movePointer(pointer, time, x, y);
 
     wl_list *resource_list = &pointer->focus_resource_list;
     wl_resource *resource;
@@ -165,6 +170,55 @@ void Shell::defaultPointerGrabButton(weston_pointer_grab *grab, uint32_t time, u
     }
 }
 
+void Shell::movePointer(weston_pointer *pointer, uint32_t time, wl_fixed_t fx, wl_fixed_t fy)
+{
+    weston_pointer_move(pointer, fx, fy);
+
+    if (time - m_lastMotionTime < 1000) {
+        return;
+    }
+
+    int x = wl_fixed_to_int(fx);
+    int y = wl_fixed_to_int(fy);
+    weston_output *tmp = nullptr, *out = nullptr;
+    wl_list_for_each(tmp, &m_compositor->output_list, link) {
+        if (pixman_region32_contains_point(&tmp->region, x, y, NULL)) {
+            out = tmp;
+            break;
+        }
+    }
+    if (!out) {
+        out = getDefaultOutput();
+    }
+
+    const int pushTime = 150;
+    Binding::HotSpot hs;
+    bool inHs = true;
+    if (x <= out->x && y <= out->y) {
+        hs = Binding::HotSpot::TopLeftCorner;
+    } else if (x >= out->x + out->width - 1 && y <= out->y) {
+        hs = Binding::HotSpot::TopRightCorner;
+    } else if (x <= out->x && y >= out->y + out->height - 1) {
+        hs = Binding::HotSpot::BottomLeftCorner;
+    } else if (x >= out->x + out->width - 1 && y >= out->y + out->height - 1) {
+        hs = Binding::HotSpot::BottomRightCorner;
+    } else {
+        inHs = false;
+        m_enterHotZone = 0;
+    }
+
+    if (inHs) {
+        if (m_enterHotZone == 0) {
+            m_enterHotZone = time;
+        } else if (time - m_enterHotZone > pushTime) {
+            m_lastMotionTime = time;
+            for (Binding *b: m_hotSpotBindings[(int)hs]) {
+                b->hotSpotTriggered(pointer->seat, time, hs);
+            }
+        }
+    }
+}
+
 static void default_grab_pointer_cancel(weston_pointer_grab *grab) {}
 
 static Shell *shellFromPointer(weston_pointer_grab *grab)
@@ -184,6 +238,8 @@ Shell::Shell(struct weston_compositor *ec)
             : m_compositor(ec)
             , m_windowsMinimized(false)
             , m_quitting(false)
+            , m_lastMotionTime(0)
+            , m_enterHotZone(0)
             , m_grabSurface(nullptr)
 {
     s_instance = this;
@@ -1067,6 +1123,18 @@ void Shell::pong(ShellSurface *shsurf)
 void Shell::fadeSplash()
 {
     m_splash->fadeOut();
+}
+
+void Shell::bindHotSpot(Binding::HotSpot hs, Binding *b)
+{
+    m_hotSpotBindings[(int)hs].push_back(b);
+}
+
+void Shell::removeHotSpotBinding(Binding *b)
+{
+    for (auto v: m_hotSpotBindings) {
+        v.second.remove(b);
+    }
 }
 
 const struct wl_shell_interface Shell::shell_implementation = {

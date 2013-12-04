@@ -47,10 +47,6 @@ struct SurfaceTransform {
 };
 
 struct Grab : public ShellGrab {
-    void motion(uint32_t time, wl_fixed_t x, wl_fixed_t y) override
-    {
-        weston_pointer_move(pointer(), x, y);
-    }
     void focus() override
     {
         Workspace *currWs = shell()->currentWorkspace();
@@ -100,8 +96,9 @@ ScaleEffect::ScaleEffect(Shell *shell)
            , m_grab(new Grab)
 {
     m_grab->effect = this;
-    Binding *b = new Binding(Binding::Type::Key);
+    Binding *b = new Binding(Binding::Type::Key | Binding::Type::HotSpot);
     b->keyTriggered.connect(this, &ScaleEffect::run);
+    b->hotSpotTriggered.connect(this, &ScaleEffect::run);
     addBinding("Toggle", b);
 }
 
@@ -110,6 +107,11 @@ ScaleEffect::~ScaleEffect()
 }
 
 void ScaleEffect::run(struct weston_seat *seat, uint32_t time, uint32_t key)
+{
+    run(seat);
+}
+
+void ScaleEffect::run(weston_seat *seat, uint32_t time, Binding::HotSpot hs)
 {
     run(seat);
 }

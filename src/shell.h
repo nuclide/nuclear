@@ -20,9 +20,11 @@
 
 #include <list>
 #include <vector>
+#include <unordered_map>
 
 #include "utils.h"
 #include "layer.h"
+#include "binding.h"
 
 struct weston_view;
 
@@ -50,7 +52,7 @@ public:
 
 protected:
     virtual void focus() {}
-    virtual void motion(uint32_t time, wl_fixed_t x, wl_fixed_t y) {}
+    virtual void motion(uint32_t time, wl_fixed_t x, wl_fixed_t y);
     virtual void button(uint32_t time, uint32_t button, uint32_t state) {}
     virtual void cancel() {}
 
@@ -124,6 +126,9 @@ public:
 
     static Shell *instance() { return s_instance; }
 
+    void bindHotSpot(Binding::HotSpot hs, Binding *b);
+    void removeHotSpotBinding(Binding *b);
+
 protected:
     Shell(struct weston_compositor *ec);
     virtual void init();
@@ -139,6 +144,7 @@ protected:
     virtual void defaultPointerGrabFocus(weston_pointer_grab *grab);
     virtual void defaultPointerGrabMotion(weston_pointer_grab *grab, uint32_t time, wl_fixed_t x, wl_fixed_t y);
     virtual void defaultPointerGrabButton(weston_pointer_grab *grab, uint32_t time, uint32_t button, uint32_t state);
+    virtual void movePointer(weston_pointer *pointer, uint32_t time, wl_fixed_t x, wl_fixed_t y);
 
     struct Child {
         Shell *shell;
@@ -185,6 +191,10 @@ private:
     bool m_windowsMinimized;
     bool m_quitting;
 
+    std::unordered_map<int, std::list<Binding *>> m_hotSpotBindings;
+    uint32_t m_lastMotionTime;
+    uint32_t m_enterHotZone;
+
     std::list<weston_view *> m_blackSurfaces;
     class Splash *m_splash;
     weston_view *m_grabSurface;
@@ -197,6 +207,7 @@ private:
     static Shell *s_instance;
 
     friend class Effect;
+    friend ShellGrab;
 };
 
 template<class T>

@@ -21,6 +21,7 @@
 #include <list>
 
 #include "effect.h"
+#include "binding.h"
 
 class ShellGrab;
 class Animation;
@@ -39,6 +40,7 @@ protected:
 private:
     void run(struct weston_seat *ws);
     void run(struct weston_seat *seat, uint32_t time, uint32_t key);
+    void run(weston_seat *seat, uint32_t time, Binding::HotSpot hs);
     void end(ShellSurface *surface);
 
     bool m_scaled;

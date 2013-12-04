@@ -104,22 +104,27 @@ void GridDesktops::run(struct weston_seat *ws)
         shell()->hidePanels();
         shell()->startGrab(m_grab, ws, DESKTOP_SHELL_CURSOR_ARROW);
         m_setWs = shell()->currentWorkspace()->number();
+
+        weston_output *out = shell()->currentWorkspace()->output();
+        const int margin_w = out->width / 70;
+        const int margin_h = out->height / 70;
+
+        float rx = (1.f - (1 + numWsCols) * margin_w / (float)out->width) / (float)numWsCols;
+        float ry = (1.f - (1 + numWsRows) * margin_h / (float)out->width) / (float)numWsRows;
+        if (rx > ry) {
+            rx = ry;
+        } else {
+            ry = rx;
+        }
+
         for (int i = 0; i < numWs; ++i) {
             Workspace *w = shell()->workspace(i);
 
             int cws = i % numWsCols;
             int rws = i / numWsCols;
 
-            float rx = 1.f / (float)numWsCols;
-            float ry = 1.f / (float)numWsRows;
-            if (rx > ry) {
-                rx = ry;
-            } else {
-                ry = rx;
-            }
-
-            int x = cws * w->output()->width / numWsCols;
-            int y = rws * w->output()->height / numWsRows;
+            int x = cws * (out->width - margin_w * (1 + numWsCols)) / numWsCols + (1 + cws) * margin_w;
+            int y = rws * (out->height - margin_h * (1 + numWsRows)) / numWsRows + (1 + rws) * margin_h;
 
             Transform tr;
             tr.scale(rx, rx, 1);

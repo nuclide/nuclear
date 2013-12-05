@@ -18,6 +18,8 @@
 #ifndef UTILS_H
 #define UTILS_H
 
+#include <weston/compositor.h>
+
 #include "shellsignal.h"
 
 template<typename T>

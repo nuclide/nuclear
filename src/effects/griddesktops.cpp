@@ -33,20 +33,16 @@ struct DGrab : public ShellGrab {
         if (state == WL_POINTER_BUTTON_STATE_PRESSED) {
             int x = wl_fixed_to_int(pointer()->x);
             int y = wl_fixed_to_int(pointer()->y);
-
             int numWs = shell()->numWorkspaces();
-            int numWsCols = ceil(sqrt(numWs));
-            int numWsRows = ceil((float)numWs / (float)numWsCols);
-
-            struct weston_output *out = shell()->getDefaultOutput();
-            int cellW = out->width / numWsCols;
-            int cellH = out->height / numWsRows;
-
-            int c = x / cellW;
-            int r = y / cellH;
-            effect->m_setWs = r * numWsCols + c;
-            effect->run(effect->m_seat);
-            effect->binding("Toggle")->releaseToggle();
+            for (int i = 0; i < numWs; ++i) {
+                Workspace *w = shell()->workspace(i);
+                if (w->boundingBox().contains(x, y)) {
+                    effect->m_setWs = i;
+                    effect->run(effect->m_seat);
+                    effect->binding("Toggle")->releaseToggle();
+                    break;
+                }
+            }
         }
     }
 

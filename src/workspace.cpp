@@ -110,6 +110,14 @@ void Workspace::setTransform(const Transform &tr)
     weston_surface_damage(m_rootSurface->surface);
 }
 
+IRect2D Workspace::boundingBox() const
+{
+    pixman_box32_t *box = pixman_region32_extents(&m_background->transform.boundingbox);
+    IRect2D rect(box->x1, box->y1, box->x2 - box->x1, box->y2 - box->y1);
+
+    return rect;
+}
+
 int Workspace::numberOfSurfaces() const
 {
     return m_layer.numberOfSurfaces();

@@ -37,6 +37,8 @@ public:
     T width;
     T height;
 
+    bool contains(T a, T b) const { return a >= x && a <= x + width && b >= y && b <= y + height; }
+
     bool operator==(const Rect2D &r) { return x == r.x && y == r.y && width == r.width && height == r.height; }
     bool operator!=(const Rect2D &r) { return !(*this == r); }
 };

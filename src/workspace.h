@@ -21,6 +21,7 @@
 #include "layer.h"
 #include "transform.h"
 #include "shellsignal.h"
+#include "utils.h"
 
 struct weston_view;
 
@@ -39,6 +40,7 @@ public:
     void stackAbove(weston_view *surf, weston_view *parent);
 
     void setTransform(const Transform &tr);
+    IRect2D boundingBox() const;
 
     inline int number() const { return m_number; }
     int numberOfSurfaces() const;

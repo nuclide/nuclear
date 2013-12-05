@@ -245,6 +245,7 @@ void ScaleEffect::end(ShellSurface *surface)
     m_chosenSurface = surface;
     ShellSeat::shellSeat(m_seat)->activate(surface);
     run(m_seat);
+    binding("Toggle")->releaseToggle();
 }
 
 void ScaleEffect::addedSurface(ShellSurface *surface)

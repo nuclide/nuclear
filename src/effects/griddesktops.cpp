@@ -46,6 +46,7 @@ struct DGrab : public ShellGrab {
             int r = y / cellH;
             effect->m_setWs = r * numWsCols + c;
             effect->run(effect->m_seat);
+            effect->binding("Toggle")->releaseToggle();
         }
     }
 

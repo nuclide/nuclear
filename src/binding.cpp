@@ -40,6 +40,13 @@ void Binding::setIsToggle(bool t)
     m_isToggle = t;
 }
 
+void Binding::releaseToggle()
+{
+    if (m_isToggle && s_toggledBinding == this) {
+        s_toggledBinding = nullptr;
+    }
+}
+
 void Binding::keyHandler(weston_seat *seat, uint32_t time, uint32_t key, void *data)
 {
     Binding *b = static_cast<Binding *>(data);

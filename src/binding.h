@@ -41,6 +41,7 @@ public:
     ~Binding();
 
     void setIsToggle(bool toggle);
+    void releaseToggle();
 
     void bindKey(uint32_t key, weston_keyboard_modifier modifier);
     void bindAxis(uint32_t axis, weston_keyboard_modifier modifier);

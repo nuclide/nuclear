@@ -23,6 +23,7 @@ set(SOURCES
     desktop-shell.cpp
     inputpanel.cpp
     binding.cpp
+    wlshell.cpp
     effects/scaleeffect.cpp
     effects/griddesktops.cpp
     effects/zoomeffect.cpp

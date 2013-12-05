@@ -86,7 +86,6 @@ public:
 
     void launchShellProcess();
     ShellSurface *createShellSurface(struct weston_surface *surface, const struct weston_shell_client *client);
-    ShellSurface *getShellSurface(struct wl_client *client, struct wl_resource *resource, uint32_t id, struct wl_resource *surface_resource);
     void removeShellSurface(ShellSurface *surface);
     static ShellSurface *getShellSurface(const struct weston_surface *surf);
     static weston_view *defaultView(const weston_surface *surface);
@@ -168,18 +167,15 @@ protected:
 
 private:
     void destroy();
-    void bind(struct wl_client *client, uint32_t version, uint32_t id);
     void sigchld(int status);
     void backgroundConfigure(struct weston_surface *es, int32_t sx, int32_t sy);
     void activateSurface(struct weston_seat *seat, uint32_t time, uint32_t button);
     void configureFullscreen(ShellSurface *surface);
     void stackFullscreen(ShellSurface *surface);
     weston_view *createBlackSurface(ShellSurface *fs_surface, float x, float y, int w, int h);
-    static void sendConfigure(struct weston_surface *surface, uint32_t edges, int32_t width, int32_t height);
     bool surfaceIsTopFullscreen(ShellSurface *surface);
     void activateWorkspace(Workspace *old);
     void pointerFocus(ShellSeat *shseat, struct weston_pointer *pointer);
-    void pingTimeout(ShellSurface *shsurf);
     void pong(ShellSurface *shsurf);
     weston_view *createBlackSurface(int x, int y, int w, int h);
     void workspaceRemoved(Workspace *ws);
@@ -207,8 +203,6 @@ private:
 
     static void staticPanelConfigure(weston_surface *es, int32_t sx, int32_t sy);
 
-    static const struct wl_shell_interface shell_implementation;
-    static const struct weston_shell_client shell_client;
     static const weston_pointer_grab_interface s_defaultPointerGrabInterface;
     static Shell *s_instance;
 

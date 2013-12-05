@@ -299,10 +299,6 @@ void Shell::init()
     m_destroyListener.listen(&m_compositor->destroy_signal);
     m_destroyListener.signal->connect(this, &Shell::destroy);
 
-    if (!wl_global_create(m_compositor->wl_display, &wl_shell_interface, 1, this,
-        [](struct wl_client *client, void *data, uint32_t version, uint32_t id) { static_cast<Shell *>(data)->bind(client, version, id); }))
-        return;
-
     struct weston_seat *seat;
     wl_list_for_each(seat, &m_compositor->seat_list, link) {
         ShellSeat *shseat = ShellSeat::shellSeat(seat);
@@ -689,43 +685,6 @@ ShellSurface *Shell::createShellSurface(struct weston_surface *surface, const st
     surface->configure_private = shsurf;
     shsurf->m_client = client;
     shsurf->m_workspace = currentWorkspace();
-    return shsurf;
-}
-
-void Shell::sendConfigure(struct weston_surface *surface, uint32_t edges, int32_t width, int32_t height)
-{
-    ShellSurface *shsurf = Shell::getShellSurface(surface);
-    wl_shell_surface_send_configure(shsurf->m_resource, edges, width, height);
-}
-
-const struct weston_shell_client Shell::shell_client = {
-    Shell::sendConfigure
-};
-
-ShellSurface *Shell::getShellSurface(struct wl_client *client, struct wl_resource *resource, uint32_t id,
-                                     struct wl_resource *surface_resource)
-{
-    struct weston_surface *surface = static_cast<weston_surface *>(wl_resource_get_user_data(surface_resource));
-
-    ShellSurface *shsurf = getShellSurface(surface);
-    if (shsurf) {
-        wl_resource_post_error(surface_resource,
-                               WL_DISPLAY_ERROR_INVALID_OBJECT,
-                               "desktop_shell::get_shell_surface already requested");
-        return shsurf;
-    }
-
-    shsurf = createShellSurface(surface, &shell_client);
-    if (!shsurf) {
-        wl_resource_post_error(surface_resource,
-                               WL_DISPLAY_ERROR_INVALID_OBJECT,
-                               "surface->configure already set");
-        return nullptr;
-    }
-
-    shsurf->init(client, id);
-    shsurf->pingTimeoutSignal.connect(this, &Shell::pingTimeout);
-
     return shsurf;
 }
 
@@ -1127,15 +1086,6 @@ void Shell::pointerFocus(ShellSeat *, struct weston_pointer *pointer)
     }
 }
 
-void Shell::pingTimeout(ShellSurface *shsurf)
-{
-    struct weston_seat *seat;
-    wl_list_for_each(seat, &m_compositor->seat_list, link) {
-        if (seat->pointer->focus == shsurf->view())
-            setBusyCursor(shsurf, seat);
-    }
-}
-
 void Shell::pong(ShellSurface *shsurf)
 {
     if (!shsurf->isResponsive()) {
@@ -1170,19 +1120,6 @@ void Shell::removeHotSpotBinding(Binding *b)
 void Shell::putInLimbo(ShellSurface *s)
 {
     m_limboLayer.addSurface(s);
-}
-
-const struct wl_shell_interface Shell::shell_implementation = {
-    [](struct wl_client *client, struct wl_resource *resource, uint32_t id, struct wl_resource *surface_resource) {
-        static_cast<Shell *>(wl_resource_get_user_data(resource))->getShellSurface(client, resource, id, surface_resource);
-    }
-};
-
-void Shell::bind(struct wl_client *client, uint32_t version, uint32_t id)
-{
-    struct wl_resource *resource = wl_resource_create(client, &wl_shell_interface, version, id);
-    if (resource)
-        wl_resource_set_implementation(resource, &shell_implementation, this, nullptr);
 }
 
 void Shell::sigchld(int status)

@@ -24,10 +24,12 @@
 #include "utils.h"
 
 class InputPanel;
+class WlShell;
 
 class DesktopShell : public Shell {
 public:
     DesktopShell(struct weston_compositor *ec);
+    ~DesktopShell();
 
 protected:
     virtual void init();
@@ -70,6 +72,7 @@ private:
     };
     std::list<Output> m_outputs;
     InputPanel *m_inputPanel;
+    WlShell *m_wlShell;
 };
 
 #endif

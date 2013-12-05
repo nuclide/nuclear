@@ -39,10 +39,16 @@
 #include "shellseat.h"
 #include "workspace.h"
 #include "minimizeeffect.h"
+#include "wlshell.h"
 
 DesktopShell::DesktopShell(struct weston_compositor *ec)
             : Shell(ec)
 {
+}
+
+DesktopShell::~DesktopShell()
+{
+    delete m_wlShell;
 }
 
 void DesktopShell::init()
@@ -62,6 +68,9 @@ void DesktopShell::init()
                                          [](struct weston_seat *seat, uint32_t time, uint32_t button, void *data) {
                                              static_cast<DesktopShell *>(data)->resizeBinding(seat, time, button);
                                          }, this);
+
+    m_wlShell = new WlShell;
+    m_wlShell->surfaceUnresponsive.connect(this, &DesktopShell::setBusyCursor);
 
     Effect *e = new ScaleEffect(this);
     e->binding("Toggle")->bindKey(KEY_E, MODIFIER_CTRL);

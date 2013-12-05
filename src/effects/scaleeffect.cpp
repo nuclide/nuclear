@@ -215,9 +215,9 @@ void ScaleEffect::run(struct weston_seat *ws)
     if (m_scaled) {
         m_seat = ws;
         m_chosenSurface = nullptr;
+        m_grab->surface = nullptr;
         shell()->startGrab(m_grab, ws, DESKTOP_SHELL_CURSOR_ARROW);
         shell()->hidePanels();
-        m_grab->surface = nullptr;
         if (ws->pointer->focus) {
             ShellSurface *s = Shell::getShellSurface(ws->pointer->focus->surface);
             if (!s) {

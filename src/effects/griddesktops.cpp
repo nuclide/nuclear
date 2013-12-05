@@ -28,25 +28,110 @@
 #include "wayland-desktop-shell-server-protocol.h"
 
 struct DGrab : public ShellGrab {
+    void focus() override
+    {
+        if (moving) {
+            return;
+        }
+
+        wl_fixed_t sx, sy;
+        weston_view *view = weston_compositor_pick_view(pointer()->seat->compositor, pointer()->x, pointer()->y, &sx, &sy);
+
+        if (pointer()->focus != view) {
+            weston_pointer_set_focus(pointer(), view, sx, sy);
+        }
+    }
+    void motion(uint32_t time, wl_fixed_t x, wl_fixed_t y) override
+    {
+        weston_pointer_move(pointer(), x, y);
+
+        if (surface) {
+            int pos_x = wl_fixed_to_int(pointer()->x + dx);
+            int pos_y = wl_fixed_to_int(pointer()->y + dy);
+            if (!moving) {
+                int dx = pos_x - surface->x();
+                int dy = pos_y - surface->y();
+                if (fabsf(dx) + fabsf(dy) < 5) {
+                    return;
+                }
+                moving = true;
+
+                surface->workspace()->removeSurface(surface);
+                shell()->putInLimbo(surface);
+                weston_matrix *matrix = &surfTransform.matrix;
+                weston_matrix_init(matrix);
+                weston_matrix_scale(matrix, scale, scale, 1.f);
+
+                surface->setPosition(surface->transformedX(), surface->transformedY());
+                surface->addTransform(&surfTransform);
+                surface->moveStartSignal(surface);
+                setCursor(DESKTOP_SHELL_CURSOR_MOVE);
+            }
+
+            surface->setPosition(pos_x, pos_y);
+        }
+
+        if (!moving) {
+            wl_list *resource_list = &pointer()->focus_resource_list;
+            wl_resource *resource;
+            wl_resource_for_each(resource, resource_list) {
+                wl_fixed_t sx, sy;
+                weston_view_from_global_fixed(pointer()->focus, pointer()->x, pointer()->y, &sx, &sy);
+                wl_pointer_send_motion(resource, time, sx, sy);
+            }
+        }
+    }
     void button(uint32_t time, uint32_t button, uint32_t state) override
     {
         if (state == WL_POINTER_BUTTON_STATE_PRESSED) {
+            ShellSurface *shsurf = pointer()->focus ? Shell::getShellSurface(pointer()->focus->surface) : nullptr;
+            if (shsurf) {
+                dx = wl_fixed_from_double(shsurf->transformedX()) - pointer()->grab_x;
+                dy = wl_fixed_from_double(shsurf->transformedY()) - pointer()->grab_y;
+                surface = shsurf;
+                moving = false;
+                wl_list_init(&surfTransform.link);
+            }
+        } else {
             int x = wl_fixed_to_int(pointer()->x);
             int y = wl_fixed_to_int(pointer()->y);
             int numWs = shell()->numWorkspaces();
+            int ws = 0;
             for (int i = 0; i < numWs; ++i) {
                 Workspace *w = shell()->workspace(i);
                 if (w->boundingBox().contains(x, y)) {
-                    effect->m_setWs = i;
-                    effect->run(effect->m_seat);
-                    effect->binding("Toggle")->releaseToggle();
+                    ws = i;
                     break;
                 }
             }
+
+            if (surface && moving) {
+                surface->removeTransform(&surfTransform);
+                Workspace *w = shell()->workspace(ws);
+                w->addSurface(surface);
+
+                float x = wl_fixed_to_int(pointer()->x + dx);
+                float y = wl_fixed_to_int(pointer()->y + dy);
+                IRect2D bbox = w->boundingBox();
+                surface->setPosition((int)((x - bbox.x) / scale) , (int)((y - bbox.y) / scale));
+                surface->moveEndSignal(surface);
+                unsetCursor();
+            } else {
+                effect->m_setWs = ws;
+                effect->run(effect->m_seat);
+                effect->binding("Toggle")->releaseToggle();
+            }
+            surface = nullptr;
+            moving = false;
         }
     }
 
     GridDesktops *effect;
+    ShellSurface *surface;
+    wl_fixed_t dx, dy;
+    bool moving;
+    weston_transform surfTransform;
+    float scale;
 };
 
 GridDesktops::GridDesktops(Shell *shell)
@@ -100,6 +185,7 @@ void GridDesktops::run(struct weston_seat *ws)
     } else {
         shell()->showAllWorkspaces();
         shell()->hidePanels();
+        m_grab->surface = nullptr;
         shell()->startGrab(m_grab, ws, DESKTOP_SHELL_CURSOR_ARROW);
         m_setWs = shell()->currentWorkspace()->number();
 
@@ -114,6 +200,7 @@ void GridDesktops::run(struct weston_seat *ws)
         } else {
             ry = rx;
         }
+        m_grab->scale = rx;
 
         for (int i = 0; i < numWs; ++i) {
             Workspace *w = shell()->workspace(i);

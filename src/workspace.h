@@ -36,6 +36,7 @@ public:
     void createBackgroundView(weston_surface *bkg);
 
     void addSurface(ShellSurface *surface);
+    void removeSurface(ShellSurface *surface);
     void restack(ShellSurface *surface);
     void stackAbove(weston_view *surf, weston_view *parent);
 

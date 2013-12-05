@@ -100,6 +100,22 @@ ShellGrab *ShellGrab::fromGrab(weston_pointer_grab *grab)
     return wrapper->parent;
 }
 
+void ShellGrab::setCursor(uint32_t cursor)
+{
+    shell()->setGrabCursor(cursor);
+    weston_pointer_set_focus(pointer(), shell()->m_grabSurface, wl_fixed_from_int(0), wl_fixed_from_int(0));
+}
+
+void ShellGrab::unsetCursor()
+{
+    wl_fixed_t sx, sy;
+    weston_view *view = weston_compositor_pick_view(pointer()->seat->compositor, pointer()->x, pointer()->y, &sx, &sy);
+
+    if (pointer()->focus != view) {
+        weston_pointer_set_focus(pointer(), view, sx, sy);
+    }
+}
+
 const weston_pointer_grab_interface ShellGrab::s_shellGrabInterface = {
     [](weston_pointer_grab *base)                                                 { ShellGrab::fromGrab(base)->focus(); },
     [](weston_pointer_grab *base, uint32_t time, wl_fixed_t x, wl_fixed_t y)      { ShellGrab::fromGrab(base)->motion(time, x, y); },
@@ -297,7 +313,8 @@ void Shell::init()
     m_overlayLayer.insert(&m_splashLayer);
     m_fullscreenLayer.insert(&m_overlayLayer);
     m_panelsLayer.insert(&m_fullscreenLayer);
-    m_backgroundLayer.insert(&m_panelsLayer);
+    m_limboLayer.insert(&m_panelsLayer);
+    m_backgroundLayer.insert(&m_limboLayer);
 
     m_currentWorkspace = 0;
     m_splash = new Splash;
@@ -907,12 +924,19 @@ void Shell::addOverlaySurface(struct weston_surface *surface, struct weston_outp
 
 void Shell::showPanels()
 {
-    m_panelsLayer.show();
+    for (weston_view *v: m_panelsLayer) {
+        v->alpha = 1;
+    }
 }
 
 void Shell::hidePanels()
 {
-    m_panelsLayer.hide();
+    // Use this total transparency instead of removing the layer
+    // because we want to the surface to keep receiving fram callbacks,
+    // otherwise Qt's main thread will be stuck.
+    for (weston_view *v: m_panelsLayer) {
+        v->alpha = 0;
+    }
 }
 
 IRect2D Shell::windowsArea(struct weston_output *output) const
@@ -999,7 +1023,7 @@ void Shell::activateWorkspace(Workspace *old)
     }
 
     currentWorkspace()->setActive(true);
-    currentWorkspace()->insert(&m_panelsLayer);
+    currentWorkspace()->insert(&m_limboLayer);
 
     for (const weston_view *view: currentWorkspace()->layer()) {
         ShellSurface *shsurf = getShellSurface(view->surface);
@@ -1031,7 +1055,7 @@ void Shell::showAllWorkspaces()
         if (prev) {
             w->insert(prev);
         } else {
-            w->insert(&m_panelsLayer);
+            w->insert(&m_limboLayer);
         }
         prev = w;
     }
@@ -1141,6 +1165,11 @@ void Shell::removeHotSpotBinding(Binding *b)
     for (auto v: m_hotSpotBindings) {
         v.second.remove(b);
     }
+}
+
+void Shell::putInLimbo(ShellSurface *s)
+{
+    m_limboLayer.addSurface(s);
 }
 
 const struct wl_shell_interface Shell::shell_implementation = {

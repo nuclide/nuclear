@@ -55,6 +55,8 @@ protected:
     virtual void motion(uint32_t time, wl_fixed_t x, wl_fixed_t y);
     virtual void button(uint32_t time, uint32_t button, uint32_t state) {}
     virtual void cancel() {}
+    void setCursor(uint32_t cursor);
+    void unsetCursor();
 
 private:
     Shell *m_shell;
@@ -129,6 +131,8 @@ public:
     void bindHotSpot(Binding::HotSpot hs, Binding *b);
     void removeHotSpotBinding(Binding *b);
 
+    void putInLimbo(ShellSurface *s);
+
 protected:
     Shell(struct weston_compositor *ec);
     virtual void init();
@@ -184,6 +188,7 @@ private:
     WlListener m_destroyListener;
     char *m_clientPath;
     Layer m_splashLayer;
+    Layer m_limboLayer;
     std::vector<Effect *> m_effects;
     ShellSurfaceList m_surfaces;
     std::vector<Workspace *> m_workspaces;

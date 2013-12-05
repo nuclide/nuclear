@@ -75,8 +75,11 @@ public:
     int32_t y() const;
     int32_t width() const;
     int32_t height() const;
+    float transformedX() const;
+    float transformedY() const;
     int32_t transformedWidth() const;
     int32_t transformedHeight() const;
+    void setPosition(float x, float y);
     IRect2D surfaceTreeBoundingBox() const;
     float alpha() const;
     inline bool is(struct weston_surface *s) const { return s == m_surface; }

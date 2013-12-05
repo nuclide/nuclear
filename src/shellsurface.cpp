@@ -416,6 +416,18 @@ int32_t ShellSurface::height() const
     return m_surface->height;
 }
 
+float ShellSurface::transformedX() const
+{
+    pixman_box32_t *box = pixman_region32_extents(&m_view->transform.boundingbox);
+    return box->x1;
+}
+
+float ShellSurface::transformedY() const
+{
+    pixman_box32_t *box = pixman_region32_extents(&m_view->transform.boundingbox);
+    return box->y1;
+}
+
 int32_t ShellSurface::transformedWidth() const
 {
     pixman_box32_t *box = pixman_region32_extents(&m_view->transform.boundingbox);
@@ -426,6 +438,11 @@ int32_t ShellSurface::transformedHeight() const
 {
     pixman_box32_t *box = pixman_region32_extents(&m_view->transform.boundingbox);
     return box->y2 - box->y1;
+}
+
+void ShellSurface::setPosition(float x, float y)
+{
+    weston_view_set_position(m_view, x, y);
 }
 
 float ShellSurface::alpha() const

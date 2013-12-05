@@ -18,9 +18,12 @@
 #include "binding.h"
 #include "shell.h"
 
+Binding *Binding::s_toggledBinding = nullptr;
+
 Binding::Binding(Type t)
         : m_binding(nullptr)
         , m_isHotSpot(false)
+        , m_isToggle(false)
 {
 }
 
@@ -32,9 +35,17 @@ Binding::~Binding()
     }
 }
 
-static void keyHandler(weston_seat *seat, uint32_t time, uint32_t key, void *data)
+void Binding::setIsToggle(bool t)
 {
-    static_cast<Binding *>(data)->keyTriggered(seat, time, key);
+    m_isToggle = t;
+}
+
+void Binding::keyHandler(weston_seat *seat, uint32_t time, uint32_t key, void *data)
+{
+    Binding *b = static_cast<Binding *>(data);
+    if (b->checkToggled()) {
+        b->keyTriggered(seat, time, key);
+    }
 }
 
 static void axisHandler(weston_seat *seat, uint32_t time, uint32_t axis, wl_fixed_t value, void *data)
@@ -56,4 +67,28 @@ void Binding::bindHotSpot(HotSpot hs)
 {
     m_isHotSpot = true;
     Shell::instance()->bindHotSpot(hs, this);
+}
+
+void Binding::hotSpotHandler(weston_seat *seat, uint32_t time, HotSpot hs)
+{
+    if (checkToggled()) {
+        hotSpotTriggered(seat, time, hs);
+    }
+}
+
+bool Binding::checkToggled()
+{
+    if (!m_isToggle) {
+        return true;
+    }
+
+    if (s_toggledBinding && s_toggledBinding != this) {
+        return false;
+    }
+    if (s_toggledBinding == this) {
+        s_toggledBinding = nullptr;
+    } else {
+        s_toggledBinding = this;
+    }
+    return true;
 }

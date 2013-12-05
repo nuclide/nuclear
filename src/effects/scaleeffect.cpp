@@ -97,6 +97,7 @@ ScaleEffect::ScaleEffect(Shell *shell)
 {
     m_grab->effect = this;
     Binding *b = new Binding(Binding::Type::Key | Binding::Type::HotSpot);
+    b->setIsToggle(true);
     b->keyTriggered.connect(this, &ScaleEffect::run);
     b->hotSpotTriggered.connect(this, &ScaleEffect::run);
     addBinding("Toggle", b);

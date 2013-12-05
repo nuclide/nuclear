@@ -213,7 +213,7 @@ void Shell::movePointer(weston_pointer *pointer, uint32_t time, wl_fixed_t fx, w
         } else if (time - m_enterHotZone > pushTime) {
             m_lastMotionTime = time;
             for (Binding *b: m_hotSpotBindings[(int)hs]) {
-                b->hotSpotTriggered(pointer->seat, time, hs);
+                b->hotSpotHandler(pointer->seat, time, hs);
             }
         }
     }

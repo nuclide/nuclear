@@ -59,6 +59,7 @@ GridDesktops::GridDesktops(Shell *shell)
 {
     m_grab->effect = this;
     Binding *b = new Binding(Binding::Type::Key | Binding::Type::HotSpot);
+    b->setIsToggle(true);
     b->keyTriggered.connect(this, &GridDesktops::run);
     b->hotSpotTriggered.connect(this, &GridDesktops::run);
     addBinding("Toggle", b);

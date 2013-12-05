@@ -40,6 +40,8 @@ public:
     explicit Binding(Type t);
     ~Binding();
 
+    void setIsToggle(bool toggle);
+
     void bindKey(uint32_t key, weston_keyboard_modifier modifier);
     void bindAxis(uint32_t axis, weston_keyboard_modifier modifier);
     void bindHotSpot(HotSpot hs);
@@ -49,8 +51,17 @@ public:
     Signal<weston_seat *, uint32_t, HotSpot> hotSpotTriggered;
 
 private:
+    static void keyHandler(weston_seat *seat, uint32_t time, uint32_t key, void *data);
+    static Binding *s_toggledBinding;
+
+    void hotSpotHandler(weston_seat *seat, uint32_t time, HotSpot hs);
+    bool checkToggled();
+
     weston_binding *m_binding;
     bool m_isHotSpot;
+    bool m_isToggle;
+
+    friend class Shell;
 };
 
 inline Binding::Type operator|(Binding::Type a, Binding::Type b)

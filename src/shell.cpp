@@ -465,7 +465,7 @@ void Shell::configureSurface(ShellSurface *surface, int32_t sx, int32_t sy)
         switch (surface->m_type) {
             case ShellSurface::Type::XWayland:
             case ShellSurface::Type::Transient:
-                if (surface->m_transient.flags == WL_SHELL_SURFACE_TRANSIENT_INACTIVE) {
+                if (surface->m_transient.inactive) {
                     break;
                 }
             case ShellSurface::Type::TopLevel:
@@ -483,7 +483,7 @@ void Shell::configureSurface(ShellSurface *surface, int32_t sx, int32_t sy)
             switch (surface->m_type) {
                 case ShellSurface::Type::Transient:
                 case ShellSurface::Type::Popup:
-                    if (surface->m_transient.flags == WL_SHELL_SURFACE_TRANSIENT_INACTIVE) {
+                    if (surface->m_transient.inactive) {
                         break;
                     }
                 default:
@@ -1016,7 +1016,7 @@ void Shell::minimizeWindows()
         switch (shsurf->m_type) {
             case ShellSurface::Type::Transient:
             case ShellSurface::Type::Popup:
-                if (shsurf->m_transient.flags == WL_SHELL_SURFACE_TRANSIENT_INACTIVE) {
+                if (shsurf->m_transient.inactive) {
                     break;
                 }
             default:
@@ -1035,7 +1035,7 @@ void Shell::restoreWindows()
         switch (shsurf->m_type) {
             case ShellSurface::Type::Transient:
             case ShellSurface::Type::Popup:
-                if (shsurf->m_transient.flags == WL_SHELL_SURFACE_TRANSIENT_INACTIVE) {
+                if (shsurf->m_transient.inactive) {
                     break;
                 }
             default:

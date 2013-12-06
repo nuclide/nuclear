@@ -285,22 +285,22 @@ void ShellSurface::setTopLevel()
     m_pendingType = Type::TopLevel;
 }
 
-void ShellSurface::setTransient(struct weston_surface *parent, int x, int y, uint32_t flags)
+void ShellSurface::setTransient(struct weston_surface *parent, int x, int y, bool inactive)
 {
     m_parent = parent;
     m_transient.x = x;
     m_transient.y = y;
-    m_transient.flags = flags;
+    m_transient.inactive = inactive;
 
     m_pendingType = Type::Transient;
 }
 
-void ShellSurface::setXWayland(int x, int y, uint32_t flags)
+void ShellSurface::setXWayland(int x, int y, bool inactive)
 {
     // reuse the transient fields for XWayland
     m_transient.x = x;
     m_transient.y = y;
-    m_transient.flags = flags;
+    m_transient.inactive = inactive;
 
     m_pendingType = Type::XWayland;
 }

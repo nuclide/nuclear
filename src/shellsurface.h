@@ -70,9 +70,9 @@ public:
     void advertize();
 
     void setTopLevel();
-    void setTransient(weston_surface *parent, int x, int y, uint32_t flags);
+    void setTransient(weston_surface *parent, int x, int y, bool inactive);
     void setFullscreen(FullscreenMethod method, uint32_t framerate, weston_output *output);
-    void setXWayland(int x, int y, uint32_t flags);
+    void setXWayland(int x, int y, bool inactive);
     void setPopup(weston_surface *parent, weston_seat *seat, int32_t x, int32_t y, uint32_t serial);
     void setMaximized(weston_output *output);
 
@@ -167,7 +167,7 @@ private:
     struct weston_surface *m_parent;
     struct {
         int32_t x, y;
-        uint32_t flags;
+        bool inactive;
     } m_transient;
 
     struct {

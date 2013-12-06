@@ -25,6 +25,7 @@
 
 class InputPanel;
 class WlShell;
+class XWlShell;
 
 class DesktopShell : public Shell {
 public:
@@ -41,6 +42,7 @@ protected:
 private:
     void sendInitEvents();
     void workspaceAdded(Workspace *ws);
+    void surfaceResponsivenessChanged(ShellSurface *shsurf, bool responsive);
     void bind(struct wl_client *client, uint32_t version, uint32_t id);
     void unbind(struct wl_resource *resource);
     void moveBinding(struct weston_seat *seat, uint32_t time, uint32_t button);
@@ -72,7 +74,6 @@ private:
     };
     std::list<Output> m_outputs;
     InputPanel *m_inputPanel;
-    WlShell *m_wlShell;
 };
 
 #endif

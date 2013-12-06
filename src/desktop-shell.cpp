@@ -39,7 +39,8 @@
 #include "shellseat.h"
 #include "workspace.h"
 #include "minimizeeffect.h"
-#include "wlshell.h"
+#include "wl_shell/wlshell.h"
+#include "xwlshell.h"
 
 DesktopShell::DesktopShell(struct weston_compositor *ec)
             : Shell(ec)
@@ -48,7 +49,6 @@ DesktopShell::DesktopShell(struct weston_compositor *ec)
 
 DesktopShell::~DesktopShell()
 {
-    delete m_wlShell;
 }
 
 void DesktopShell::init()
@@ -69,8 +69,10 @@ void DesktopShell::init()
                                              static_cast<DesktopShell *>(data)->resizeBinding(seat, time, button);
                                          }, this);
 
-    m_wlShell = new WlShell;
-    m_wlShell->surfaceUnresponsive.connect(this, &DesktopShell::setBusyCursor);
+    WlShell *wls = new WlShell;
+    wls->surfaceResponsivenessChangedSignal.connect(this, &DesktopShell::surfaceResponsivenessChanged);
+    addInterface(wls);
+    addInterface(new XWlShell);
 
     Effect *e = new ScaleEffect(this);
     e->binding("Toggle")->bindKey(KEY_E, MODIFIER_CTRL);
@@ -166,6 +168,16 @@ void DesktopShell::sendInitEvents()
 void DesktopShell::workspaceAdded(Workspace *ws)
 {
     desktop_shell_send_workspace_added(m_child.desktop_shell, ws->resource(), ws->active());
+}
+
+void DesktopShell::surfaceResponsivenessChanged(ShellSurface *shsurf, bool responsiveness)
+{
+    weston_seat *seat;
+    wl_list_for_each(seat, &compositor()->seat_list, link) {
+        if (seat->pointer->focus == shsurf->view()) {
+            responsiveness ? endBusyCursor(seat) : setBusyCursor(shsurf, seat);
+        }
+    }
 }
 
 void DesktopShell::bind(struct wl_client *client, uint32_t version, uint32_t id)

@@ -32,26 +32,23 @@
 ShellSurface::ShellSurface(Shell *shell, struct weston_surface *surface)
             : m_shell(shell)
             , m_workspace(nullptr)
-            , m_resource(nullptr)
             , m_windowResource(nullptr)
             , m_surface(surface)
             , m_view(weston_view_create(surface))
             , m_type(Type::None)
             , m_pendingType(Type::None)
-            , m_unresponsive(false)
             , m_state(DESKTOP_SHELL_WINDOW_STATE_INACTIVE)
             , m_windowAdvertized(false)
             , m_acceptState(true)
             , m_runningGrab(nullptr)
             , m_parent(nullptr)
-            , m_pingTimer(nullptr)
 {
     m_popup.seat = nullptr;
     wl_list_init(&m_fullscreen.transform.link);
     m_fullscreen.blackView = nullptr;
 
     m_surfaceDestroyListener.listen(&surface->destroy_signal);
-    m_surfaceDestroyListener.signal->connect(this, &ShellSurface::surfaceDestroyed);
+    m_surfaceDestroyListener.signal->connect(static_cast<Object *>(this), &Object::destroy);
 }
 
 ShellSurface::~ShellSurface()
@@ -62,7 +59,7 @@ ShellSurface::~ShellSurface()
     if (m_popup.seat) {
         m_popup.seat->removePopupGrab(this);
     }
-    destroyPingTimer();
+
     m_shell->removeShellSurface(this);
     if (m_fullscreen.blackView) {
         weston_surface_destroy(m_fullscreen.blackView->surface);
@@ -97,33 +94,12 @@ const struct desktop_shell_window_interface ShellSurface::m_window_implementatio
     wrapInterface(&ShellSurface::close)
 };
 
-void ShellSurface::init(struct wl_client *client, uint32_t id)
-{
-    m_resource = wl_resource_create(client, &wl_shell_surface_interface, 1, id);
-    wl_resource_set_implementation(m_resource, &m_shell_surface_implementation, this, [](struct wl_resource *resource) { delete _this; });
-
-//     m_resource.destroy = [](struct wl_resource *resource) { delete static_cast<ShellSurface *>(resource->data); };
-//     m_resource.object.id = id;
-//     m_resource.object.interface = &wl_shell_surface_interface;
-//     m_resource.object.implementation = &m_shell_surface_implementation;
-//     m_resource.data = this;
-}
-
 void ShellSurface::destroyWindow()
 {
     if (m_windowResource) {
         desktop_shell_window_send_removed(m_windowResource);
         wl_resource_destroy(m_windowResource);
         m_windowResource = nullptr;
-    }
-}
-
-void ShellSurface::surfaceDestroyed()
-{
-    if (m_resource && wl_resource_get_client(m_resource)) {
-        wl_resource_destroy(m_resource);
-    } else {
-        delete this;
     }
 }
 
@@ -337,6 +313,11 @@ void ShellSurface::setTitle(const char *title)
     }
 }
 
+void ShellSurface::setClass(const char *c)
+{
+    m_class = c;
+}
+
 void ShellSurface::mapPopup()
 {
     m_view->output = m_parent->output;
@@ -385,9 +366,7 @@ void ShellSurface::setAlpha(float alpha)
 
 void ShellSurface::popupDone()
 {
-    if (m_resource) {
-        wl_shell_surface_send_popup_done(m_resource);
-    }
+    popupDoneSignal();
     m_popup.seat = nullptr;
 }
 
@@ -517,62 +496,6 @@ void ShellSurface::centerOnOutput(struct weston_output *output)
     weston_view_set_position(m_view, x, y);
 }
 
-int ShellSurface::pingTimeout()
-{
-    m_unresponsive = true;
-    pingTimeoutSignal(this);
-
-    return 1;
-}
-
-void ShellSurface::ping(uint32_t serial)
-{
-    const int ping_timeout = 200;
-
-    if (!m_resource || !wl_resource_get_client(m_resource))
-        return;
-
-    if (!m_pingTimer) {
-        m_pingTimer = new PingTimer;
-        if (!m_pingTimer)
-            return;
-
-        m_pingTimer->serial = serial;
-        struct wl_event_loop *loop = wl_display_get_event_loop(m_surface->compositor->wl_display);
-        m_pingTimer->source = wl_event_loop_add_timer(loop, [](void *data)
-                                                     { return static_cast<ShellSurface *>(data)->pingTimeout(); }, this);
-        wl_event_source_timer_update(m_pingTimer->source, ping_timeout);
-
-        wl_shell_surface_send_ping(m_resource, serial);
-    }
-}
-
-bool ShellSurface::isResponsive() const
-{
-    return !m_unresponsive;
-}
-
-void ShellSurface::pong(struct wl_client *client, struct wl_resource *resource, uint32_t serial)
-{
-    if (!m_pingTimer)
-        /* Just ignore unsolicited pong. */
-        return;
-
-    if (m_pingTimer->serial == serial) {
-        pongSignal(this);
-        m_unresponsive = false;
-        destroyPingTimer();
-    }
-}
-
-void ShellSurface::destroyPingTimer()
-{
-    if (m_pingTimer && m_pingTimer->source)
-        wl_event_source_remove(m_pingTimer->source);
-
-    delete m_pingTimer;
-    m_pingTimer = nullptr;
-}
 
 // -- Move --
 
@@ -608,21 +531,6 @@ public:
     wl_listener shsurf_destroy_listener;
     wl_fixed_t dx, dy;
 };
-
-void ShellSurface::move(struct wl_client *client, struct wl_resource *resource, struct wl_resource *seat_resource,
-                        uint32_t serial)
-{
-    struct weston_seat *ws = static_cast<weston_seat *>(wl_resource_get_user_data(seat_resource));
-
-    struct weston_surface *surface = weston_surface_get_main_surface(ws->pointer->focus->surface);
-    if (ws->pointer->button_count == 0 || ws->pointer->grab_serial != serial || surface != m_surface) {
-        return;
-    }
-
-//     if (shsurf->type == SHELL_SURFACE_FULLSCREEN)
-//         return 0;
-    dragMove(ws);
-}
 
 void ShellSurface::dragMove(struct weston_seat *ws)
 {
@@ -696,19 +604,6 @@ public:
     int32_t width, height;
 };
 
-void ShellSurface::resize(struct wl_client *client, struct wl_resource *resource, struct wl_resource *seat_resource,
-                          uint32_t serial, uint32_t edges)
-{
-    struct weston_seat *ws = static_cast<weston_seat *>(wl_resource_get_user_data(seat_resource));
-
-    struct weston_surface *surface = weston_surface_get_main_surface(ws->pointer->focus->surface);
-    if (ws->pointer->button_count == 0 || ws->pointer->grab_serial != serial || surface != m_surface) {
-        return;
-    }
-
-    dragResize(ws, edges);
-}
-
 /*
  * Returns the bounding box of a surface and all its sub-surfaces,
  * in the surface coordinates system. */
@@ -761,69 +656,23 @@ void ShellSurface::dragResize(struct weston_seat *ws, uint32_t edges)
     m_shell->startGrab(grab, ws, edges);
 }
 
-void ShellSurface::setToplevel(struct wl_client *, struct wl_resource *)
+void ShellSurface::setPopup(struct weston_surface *parent, weston_seat *seat, int32_t x, int32_t y, uint32_t serial)
 {
-    setTopLevel();
-}
-
-void ShellSurface::setTransient(struct wl_client *client, struct wl_resource *resource,
-                  struct wl_resource *parent_resource, int x, int y, uint32_t flags)
-{
-    setTransient(static_cast<struct weston_surface *>(wl_resource_get_user_data(parent_resource)), x, y, flags);
-}
-
-void ShellSurface::setFullscreen(struct wl_client *client, struct wl_resource *resource, uint32_t method,
-                   uint32_t framerate, struct wl_resource *output_resource)
-{
-    struct weston_output *output = output_resource ? static_cast<struct weston_output *>(wl_resource_get_user_data(output_resource)) : nullptr;
-    setFullscreen(method, framerate, output);
-}
-
-void ShellSurface::setPopup(struct wl_client *client, struct wl_resource *resource, struct wl_resource *seat_resource,
-              uint32_t serial, struct wl_resource *parent_resource, int32_t x, int32_t y, uint32_t flags)
-{
-    m_parent = static_cast<struct weston_surface *>(wl_resource_get_user_data(parent_resource));
+    m_parent = parent;
     m_popup.x = x;
     m_popup.y = y;
     m_popup.serial = serial;
-    m_popup.seat = ShellSeat::shellSeat(static_cast<struct weston_seat *>(wl_resource_get_user_data(seat_resource)));
+    m_popup.seat = ShellSeat::shellSeat(seat);
 
     m_pendingType = Type::Popup;
 }
 
-void ShellSurface::setMaximized(struct wl_client *client, struct wl_resource *resource, struct wl_resource *output_resource)
+void ShellSurface::setMaximized(weston_output *out)
 {
-    /* get the default output, if the client set it as NULL
-    c heck whether the ouput is available */
-    if (output_resource) {
-        m_output = static_cast<struct weston_output *>(wl_resource_get_user_data(output_resource));
-    } else if (m_surface->output) {
-        m_output = m_surface->output;
-    } else {
-        m_output = m_shell->getDefaultOutput();
-    }
-
+    m_output = out;
     uint32_t edges = WL_SHELL_SURFACE_RESIZE_TOP | WL_SHELL_SURFACE_RESIZE_LEFT;
 
-    IRect2D rect = m_shell->windowsArea(m_output);
+    IRect2D rect = Shell::instance()->windowsArea(m_output);
     m_client->send_configure(m_surface, edges, rect.width, rect.height);
     m_pendingType = Type::Maximized;
 }
-
-void ShellSurface::setClass(struct wl_client *client, struct wl_resource *resource, const char *className)
-{
-    m_class = className;
-}
-
-const struct wl_shell_surface_interface ShellSurface::m_shell_surface_implementation = {
-    wrapInterface(&ShellSurface::pong),
-    wrapInterface(&ShellSurface::move),
-    wrapInterface(&ShellSurface::resize),
-    wrapInterface(&ShellSurface::setToplevel),
-    wrapInterface(&ShellSurface::setTransient),
-    wrapInterface(&ShellSurface::setFullscreen),
-    wrapInterface(&ShellSurface::setPopup),
-    wrapInterface(&ShellSurface::setMaximized),
-    wrapInterface(&ShellSurface::setTitle),
-    wrapInterface(&ShellSurface::setClass)
-};

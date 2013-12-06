@@ -21,23 +21,28 @@
 #include <wayland-server.h>
 
 #include "shellsignal.h"
+#include "interface.h"
 
 struct weston_surface;
 struct weston_seat;
+struct weston_pointer;
 
 class ShellSurface;
+class ShellSeat;
+class WlShellSurface;
 
-class WlShell
+class WlShell : public Interface
 {
 public:
     WlShell();
 
-    Signal<ShellSurface *, weston_seat *> surfaceUnresponsive;
+    Signal<ShellSurface *, bool> surfaceResponsivenessChangedSignal;
 
 private:
     void bind(wl_client *client, uint32_t version, uint32_t id);
     ShellSurface *getShellSurface(wl_client *client, wl_resource *resource, uint32_t id, wl_resource *surface_resource);
-    void pingTimeout(ShellSurface *shsurf);
+    void pointerFocus(ShellSeat *seat, weston_pointer *pointer);
+    void surfaceResponsiveness(WlShellSurface *shsurf);
 
     static void sendConfigure(weston_surface *surface, uint32_t edges, int32_t width, int32_t height);
 

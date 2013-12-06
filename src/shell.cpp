@@ -33,6 +33,7 @@
 #include "effect.h"
 #include "desktop-shell.h"
 #include "animation.h"
+#include "interface.h"
 
 class Splash {
 public:
@@ -96,6 +97,10 @@ void ShellGrab::motion(uint32_t time, wl_fixed_t x, wl_fixed_t y)
 
 ShellGrab *ShellGrab::fromGrab(weston_pointer_grab *grab)
 {
+    if (grab == &grab->pointer->default_grab) {
+        return nullptr;
+    }
+
     Grab *wrapper = container_of(grab, Grab, base);
     return wrapper->parent;
 }
@@ -237,15 +242,10 @@ void Shell::movePointer(weston_pointer *pointer, uint32_t time, wl_fixed_t fx, w
 
 static void default_grab_pointer_cancel(weston_pointer_grab *grab) {}
 
-static Shell *shellFromPointer(weston_pointer_grab *grab)
-{
-    return static_cast<Shell *>(grab->pointer->seat->compositor->shell_interface.shell);
-}
-
 const weston_pointer_grab_interface Shell::s_defaultPointerGrabInterface = {
-    [](weston_pointer_grab *g)                                                   { shellFromPointer(g)->defaultPointerGrabFocus(g); },
-    [](weston_pointer_grab *g, uint32_t time, wl_fixed_t x, wl_fixed_t y)        { shellFromPointer(g)->defaultPointerGrabMotion(g, time, x, y); },
-    [](weston_pointer_grab *g, uint32_t time, uint32_t button, uint32_t state_w) { shellFromPointer(g)->defaultPointerGrabButton(g, time, button, state_w); },
+    [](weston_pointer_grab *g)                                                   { Shell::instance()->defaultPointerGrabFocus(g); },
+    [](weston_pointer_grab *g, uint32_t time, wl_fixed_t x, wl_fixed_t y)        { Shell::instance()->defaultPointerGrabMotion(g, time, x, y); },
+    [](weston_pointer_grab *g, uint32_t time, uint32_t button, uint32_t state_w) { Shell::instance()->defaultPointerGrabButton(g, time, button, state_w); },
     default_grab_pointer_cancel,
 };
 
@@ -281,29 +281,10 @@ void Shell::destroy()
 
 void Shell::init()
 {
-#define _this reinterpret_cast<ShellSurface *>(shsurf)
-    m_compositor->shell_interface.shell = this;
-    m_compositor->shell_interface.create_shell_surface = [](void *shell, weston_surface *surface, const weston_shell_client *client) {
-        return (shell_surface *)static_cast<Shell *>(shell)->createShellSurface(surface, client);
-    };
-    m_compositor->shell_interface.set_toplevel = [](shell_surface *shsurf) { _this->setTopLevel(); };
-    m_compositor->shell_interface.set_transient = [](shell_surface *shsurf, weston_surface *parent, int x, int y, uint32_t flags) { _this->setTransient(parent, x, y, flags); };
-    m_compositor->shell_interface.set_fullscreen = [](shell_surface *shsurf, uint32_t method, uint32_t framerate, weston_output *output) { _this->setFullscreen(method, framerate, output);};
-    m_compositor->shell_interface.resize = [](shell_surface *shsurf, weston_seat *ws, uint32_t edges) { _this->dragResize(ws, edges); return 0; };
-    m_compositor->shell_interface.move = [](shell_surface *shsurf, weston_seat *ws) { _this->dragMove(ws); return 0; };
-    m_compositor->shell_interface.set_xwayland = [](shell_surface *shsurf, int x, int y, uint32_t flags) { _this->setXWayland(x, y, flags); };
-    m_compositor->shell_interface.set_title = [](shell_surface *shsurf, const char *t) { _this->setTitle(t); };
-#undef _this
     weston_compositor_set_default_pointer_grab(m_compositor, &s_defaultPointerGrabInterface);
 
     m_destroyListener.listen(&m_compositor->destroy_signal);
     m_destroyListener.signal->connect(this, &Shell::destroy);
-
-    struct weston_seat *seat;
-    wl_list_for_each(seat, &m_compositor->seat_list, link) {
-        ShellSeat *shseat = ShellSeat::shellSeat(seat);
-        shseat->pointerFocusSignal.connect(this, &Shell::pointerFocus);
-    }
 
     m_splashLayer.insert(&m_compositor->cursor_layer);
     m_overlayLayer.insert(&m_splashLayer);
@@ -534,7 +515,7 @@ void Shell::configureSurface(ShellSurface *surface, int32_t sx, int32_t sy)
                 weston_view_set_position(view, rect.x - bbox.x, rect.y - bbox.y);
             } break;
             default:
-                if (!m_windowsMinimized) {
+                if (!m_windowsMinimized && surface->m_workspace) {
                     surface->m_workspace->addSurface(surface);
                 }
                 break;
@@ -691,7 +672,8 @@ ShellSurface *Shell::createShellSurface(struct weston_surface *surface, const st
 ShellSurface *Shell::getShellSurface(const struct weston_surface *surf)
 {
     if (surf->configure == shell_surface_configure) {
-        return static_cast<ShellSurface *>(surf->configure_private);
+        Interface *iface = static_cast<Interface *>(surf->configure_private);
+        return static_cast<ShellSurface *>(iface->object());
     }
 
     return nullptr;
@@ -1064,40 +1046,6 @@ void Shell::restoreWindows()
         }
     }
     m_windowsMinimized = false;
-}
-
-void Shell::pointerFocus(ShellSeat *, struct weston_pointer *pointer)
-{
-    weston_view *view = pointer->focus;
-
-    if (!view)
-        return;
-
-    weston_compositor *compositor = view->surface->compositor;
-    ShellSurface *shsurf = Shell::getShellSurface(view->surface);
-    if (!shsurf)
-        return;
-
-    if (!shsurf->isResponsive()) {
-        shsurf->shell()->setBusyCursor(shsurf, pointer->seat);
-    } else {
-        uint32_t serial = wl_display_next_serial(compositor->wl_display);
-        shsurf->ping(serial);
-    }
-}
-
-void Shell::pong(ShellSurface *shsurf)
-{
-    if (!shsurf->isResponsive()) {
-        struct weston_seat *seat;
-        /* Received pong from previously unresponsive client */
-        wl_list_for_each(seat, &m_compositor->seat_list, link) {
-            struct weston_pointer *pointer = seat->pointer;
-            if (pointer) {
-                endBusyCursor(seat);
-            }
-        }
-    }
 }
 
 void Shell::fadeSplash()

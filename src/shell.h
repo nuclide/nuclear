@@ -25,6 +25,7 @@
 #include "utils.h"
 #include "layer.h"
 #include "binding.h"
+#include "interface.h"
 
 struct weston_view;
 
@@ -71,7 +72,7 @@ private:
     friend class Shell;
 };
 
-class Shell {
+class Shell : public Object {
 public:
     enum class PanelPosition {
         Top = 0,
@@ -107,7 +108,6 @@ public:
 
     virtual IRect2D windowsArea(struct weston_output *output) const;
 
-    inline struct weston_compositor *compositor() const { return m_compositor; }
     struct weston_output *getDefaultOutput() const;
     Workspace *currentWorkspace() const;
     Workspace *workspace(uint32_t id) const;
@@ -126,6 +126,7 @@ public:
     struct wl_resource *shellClientResource() { return m_child.desktop_shell; }
 
     static Shell *instance() { return s_instance; }
+    inline static weston_compositor *compositor() { return instance()->m_compositor; }
 
     void bindHotSpot(Binding::HotSpot hs, Binding *b);
     void removeHotSpotBinding(Binding *b);
@@ -175,8 +176,6 @@ private:
     weston_view *createBlackSurface(ShellSurface *fs_surface, float x, float y, int w, int h);
     bool surfaceIsTopFullscreen(ShellSurface *surface);
     void activateWorkspace(Workspace *old);
-    void pointerFocus(ShellSeat *shseat, struct weston_pointer *pointer);
-    void pong(ShellSurface *shsurf);
     weston_view *createBlackSurface(int x, int y, int w, int h);
     void workspaceRemoved(Workspace *ws);
 

@@ -18,6 +18,8 @@
 #include "wlshell.h"
 #include "shell.h"
 #include "shellsurface.h"
+#include "wlshellsurface.h"
+#include "shellseat.h"
 
 WlShell::WlShell()
 {
@@ -25,6 +27,12 @@ WlShell::WlShell()
                      [](wl_client *client, void *data, uint32_t version, uint32_t id) {
                          static_cast<WlShell *>(data)->bind(client, version, id);
                      });
+
+    weston_seat *seat;
+    wl_list_for_each(seat, &Shell::compositor()->seat_list, link) {
+        ShellSeat *shseat = ShellSeat::shellSeat(seat);
+        shseat->pointerFocusSignal.connect(this, &WlShell::pointerFocus);
+    }
 }
 
 void WlShell::bind(wl_client *client, uint32_t version, uint32_t id)
@@ -36,8 +44,8 @@ void WlShell::bind(wl_client *client, uint32_t version, uint32_t id)
 
 void WlShell::sendConfigure(weston_surface *surface, uint32_t edges, int32_t width, int32_t height)
 {
-    ShellSurface *shsurf = Shell::getShellSurface(surface);
-    wl_shell_surface_send_configure(shsurf->wl_resource(), edges, width, height);
+    WlShellSurface *wlss = static_cast<WlShellSurface *>(surface->configure_private);
+    wl_shell_surface_send_configure(wlss->resource(), edges, width, height);
 }
 
 ShellSurface *WlShell::getShellSurface(wl_client *client, wl_resource *resource, uint32_t id, wl_resource *surface_resource)
@@ -56,19 +64,43 @@ ShellSurface *WlShell::getShellSurface(wl_client *client, wl_resource *resource,
         return nullptr;
     }
 
-    shsurf->init(client, id);
-    shsurf->pingTimeoutSignal.connect(this, &WlShell::pingTimeout);
+    WlShellSurface *wlss = new WlShellSurface(this);
+    surface->configure_private = wlss;
+    shsurf->addInterface(wlss);
+    wlss->init(client, id);
+    wlss->responsivenessChangedSignal.connect(this, &WlShell::surfaceResponsiveness);
 
     return shsurf;
 }
 
-void WlShell::pingTimeout(ShellSurface *shsurf)
+void WlShell::pointerFocus(ShellSeat *, weston_pointer *pointer)
 {
-    weston_seat *seat;
-    wl_list_for_each(seat, &Shell::instance()->compositor()->seat_list, link) {
-        if (seat->pointer->focus == shsurf->view())
-            surfaceUnresponsive(shsurf, seat);
+    weston_view *view = pointer->focus;
+
+    if (!view)
+        return;
+
+    ShellSurface *shsurf = Shell::getShellSurface(view->surface);
+    if (!shsurf)
+        return;
+
+    WlShellSurface *wlss = shsurf->findInterface<WlShellSurface>();
+    if (!wlss) {
+        return;
     }
+
+    if (!wlss->isResponsive()) {
+        surfaceResponsivenessChangedSignal(shsurf, false);
+    } else {
+        uint32_t serial = wl_display_next_serial(Shell::compositor()->wl_display);
+        wlss->ping(serial);
+    }
+}
+
+void WlShell::surfaceResponsiveness(WlShellSurface *wlsurf)
+{
+    ShellSurface *shsurf = wlsurf->shsurf();
+    surfaceResponsivenessChangedSignal(shsurf, wlsurf->isResponsive());
 }
 
 const weston_shell_client WlShell::shell_client = {

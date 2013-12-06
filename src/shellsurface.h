@@ -44,6 +44,17 @@ public:
         Fullscreen,
         XWayland
     };
+    enum class Edges {
+        None = 0,
+        Top = 1,
+        Bottom = 2,
+        Left = 4,
+        Right = 8,
+        TopLeft = Top | Left,
+        BottomLeft = Bottom | Left,
+        TopRight = Top | Right,
+        BottomRight = Bottom | Right
+    };
     ShellSurface(Shell *shell, struct weston_surface *surface);
     ~ShellSurface();
 
@@ -95,7 +106,7 @@ public:
     void setClass(const char *c);
 
     void dragMove(struct weston_seat *ws);
-    void dragResize(struct weston_seat *ws, uint32_t edges);
+    void dragResize(weston_seat *ws, Edges edges);
     void popupDone();
 
     void setState(int state);
@@ -176,5 +187,19 @@ private:
     friend class MoveGrab;
     friend class ResizeGrab;
 };
+
+inline bool operator&(ShellSurface::Edges a, ShellSurface::Edges b)
+{
+    return (int)a & (int)b;
+}
+inline ShellSurface::Edges operator|(ShellSurface::Edges a, ShellSurface::Edges b)
+{
+    return (ShellSurface::Edges)((int)a | (int)b);
+}
+inline ShellSurface::Edges &operator|=(ShellSurface::Edges &a, ShellSurface::Edges b)
+{
+    a = a | b;
+    return a;
+}
 
 #endif

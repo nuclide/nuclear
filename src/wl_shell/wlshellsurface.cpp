@@ -137,7 +137,7 @@ void WlShellSurface::resize(wl_client *client, wl_resource *resource, wl_resourc
         return;
     }
 
-    shsurf()->dragResize(ws, edges);
+    shsurf()->dragResize(ws, (ShellSurface::Edges)edges);
 }
 
 void WlShellSurface::setToplevel(wl_client *, wl_resource *)

@@ -239,27 +239,27 @@ void DesktopShell::resizeBinding(weston_seat *seat, uint32_t time, uint32_t butt
 
         pixman_box32_t *bbox = pixman_region32_extents(&surface->input);
 
-        uint32_t edges = 0;
+        ShellSurface::Edges edges = ShellSurface::Edges::None;
         int32_t w = surface->width / 3;
         if (w > 20) w = 20;
         w += bbox->x1;
 
         if (x < w)
-            edges |= WL_SHELL_SURFACE_RESIZE_LEFT;
+            edges |= ShellSurface::Edges::Left;
         else if (x < surface->width - w)
-            edges |= 0;
+            edges |= ShellSurface::Edges::None;
         else
-            edges |= WL_SHELL_SURFACE_RESIZE_RIGHT;
+            edges |= ShellSurface::Edges::Right;
 
         int32_t h = surface->height / 3;
         if (h > 20) h = 20;
         h += bbox->y1;
         if (y < h)
-            edges |= WL_SHELL_SURFACE_RESIZE_TOP;
+            edges |= ShellSurface::Edges::Top;
         else if (y < surface->height - h)
-            edges |= 0;
+            edges |= ShellSurface::Edges::None;
         else
-            edges |= WL_SHELL_SURFACE_RESIZE_BOTTOM;
+            edges |= ShellSurface::Edges::Bottom;
 
         top->dragResize(seat, edges);
     }

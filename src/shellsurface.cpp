@@ -575,20 +575,20 @@ public:
         weston_view_from_global_fixed(view, pointer()->x, pointer()->y, &to_x, &to_y);
 
         int32_t w = width;
-        if (edges & WL_SHELL_SURFACE_RESIZE_LEFT) {
+        if (edges & ShellSurface::Edges::Left) {
             w += wl_fixed_to_int(from_x - to_x);
-        } else if (edges & WL_SHELL_SURFACE_RESIZE_RIGHT) {
+        } else if (edges & ShellSurface::Edges::Right) {
             w += wl_fixed_to_int(to_x - from_x);
         }
 
         int32_t h = height;
-        if (edges & WL_SHELL_SURFACE_RESIZE_TOP) {
+        if (edges & ShellSurface::Edges::Top) {
             h += wl_fixed_to_int(from_y - to_y);
-        } else if (edges & WL_SHELL_SURFACE_RESIZE_BOTTOM) {
+        } else if (edges & ShellSurface::Edges::Bottom) {
             h += wl_fixed_to_int(to_y - from_y);
         }
 
-        shsurf->m_client->send_configure(shsurf->m_surface, edges, w, h);
+        shsurf->m_client->send_configure(shsurf->m_surface, (int)edges, w, h);
     }
     void button(uint32_t time, uint32_t button, uint32_t state) override
     {
@@ -600,9 +600,35 @@ public:
 
     ShellSurface *shsurf;
     wl_listener shsurf_destroy_listener;
-    uint32_t edges;
+    ShellSurface::Edges edges;
     int32_t width, height;
 };
+
+void ShellSurface::dragResize(weston_seat *ws, Edges edges)
+{
+    if (m_runningGrab) {
+        return;
+    }
+
+    ResizeGrab *grab = new ResizeGrab;
+    if (!grab)
+        return;
+
+    int e = (int)edges;
+    if (e == 0 || e > 15 || (e & 3) == 3 || (e & 12) == 12) {
+        return;
+    }
+
+    grab->edges = edges;
+
+    IRect2D rect = surfaceTreeBoundingBox();
+    grab->width = rect.width;
+    grab->height = rect.height;
+    grab->shsurf = this;
+    m_runningGrab = grab;
+
+    m_shell->startGrab(grab, ws, e);
+}
 
 /*
  * Returns the bounding box of a surface and all its sub-surfaces,
@@ -631,31 +657,6 @@ IRect2D ShellSurface::surfaceTreeBoundingBox() const {
     return rect;
 }
 
-void ShellSurface::dragResize(struct weston_seat *ws, uint32_t edges)
-{
-    if (m_runningGrab) {
-        return;
-    }
-
-    ResizeGrab *grab = new ResizeGrab;
-    if (!grab)
-        return;
-
-    if (edges == 0 || edges > 15 || (edges & 3) == 3 || (edges & 12) == 12) {
-        return;
-    }
-
-    grab->edges = edges;
-
-    IRect2D rect = surfaceTreeBoundingBox();
-    grab->width = rect.width;
-    grab->height = rect.height;
-    grab->shsurf = this;
-    m_runningGrab = grab;
-
-    m_shell->startGrab(grab, ws, edges);
-}
-
 void ShellSurface::setPopup(struct weston_surface *parent, weston_seat *seat, int32_t x, int32_t y, uint32_t serial)
 {
     m_parent = parent;
@@ -670,7 +671,7 @@ void ShellSurface::setPopup(struct weston_surface *parent, weston_seat *seat, in
 void ShellSurface::setMaximized(weston_output *out)
 {
     m_output = out;
-    uint32_t edges = WL_SHELL_SURFACE_RESIZE_TOP | WL_SHELL_SURFACE_RESIZE_LEFT;
+    uint32_t edges = (int)ShellSurface::Edges::TopLeft;
 
     IRect2D rect = Shell::instance()->windowsArea(m_output);
     m_client->send_configure(m_surface, edges, rect.width, rect.height);

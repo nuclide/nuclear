@@ -55,6 +55,12 @@ public:
         TopRight = Top | Right,
         BottomRight = Bottom | Right
     };
+    enum class FullscreenMethod {
+        Default = 0,
+        Scale = 1,
+        Driver = 2,
+        Fill = 3
+    };
     ShellSurface(Shell *shell, struct weston_surface *surface);
     ~ShellSurface();
 
@@ -65,7 +71,7 @@ public:
 
     void setTopLevel();
     void setTransient(weston_surface *parent, int x, int y, uint32_t flags);
-    void setFullscreen(uint32_t method, uint32_t framerate, weston_output *output);
+    void setFullscreen(FullscreenMethod method, uint32_t framerate, weston_output *output);
     void setXWayland(int x, int y, uint32_t flags);
     void setPopup(weston_surface *parent, weston_seat *seat, int32_t x, int32_t y, uint32_t serial);
     void setMaximized(weston_output *output);
@@ -171,7 +177,7 @@ private:
     } m_popup;
 
     struct {
-        enum wl_shell_surface_fullscreen_method type;
+        FullscreenMethod type;
         struct weston_transform transform; /* matrix from x, y */
         uint32_t framerate;
         weston_view *blackView;

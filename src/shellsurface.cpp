@@ -452,7 +452,7 @@ weston_view *ShellSurface::transformParent() const
     return m_view->geometry.parent;
 }
 
-void ShellSurface::setFullscreen(uint32_t method, uint32_t framerate, struct weston_output *output)
+void ShellSurface::setFullscreen(ShellSurface::FullscreenMethod method, uint32_t framerate, struct weston_output *output)
 {
     if (output) {
         m_output = output;
@@ -463,7 +463,7 @@ void ShellSurface::setFullscreen(uint32_t method, uint32_t framerate, struct wes
     }
 
     m_fullscreen.output = m_output;
-    m_fullscreen.type = (enum wl_shell_surface_fullscreen_method)method;
+    m_fullscreen.type = method;
     m_fullscreen.framerate = framerate;
     m_pendingType = Type::Fullscreen;
 
@@ -472,7 +472,7 @@ void ShellSurface::setFullscreen(uint32_t method, uint32_t framerate, struct wes
 
 void ShellSurface::unsetFullscreen()
 {
-    m_fullscreen.type = WL_SHELL_SURFACE_FULLSCREEN_METHOD_DEFAULT;
+    m_fullscreen.type = ShellSurface::FullscreenMethod::Default;
     m_fullscreen.framerate = 0;
     removeTransform(&m_fullscreen.transform);
     if (m_fullscreen.blackView) {

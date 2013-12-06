@@ -31,7 +31,7 @@ XWlShell::XWlShell()
     compositor->shell_interface.get_primary_view = [](void *shell, shell_surface *shsurf) { return _this->view(); };
     compositor->shell_interface.set_toplevel = [](shell_surface *shsurf) { _this->setTopLevel(); };
     compositor->shell_interface.set_transient = [](shell_surface *shsurf, weston_surface *parent, int x, int y, uint32_t flags) { _this->setTransient(parent, x, y, flags); };
-    compositor->shell_interface.set_fullscreen = [](shell_surface *shsurf, uint32_t method, uint32_t framerate, weston_output *output) { _this->setFullscreen(method, framerate, output);};
+    compositor->shell_interface.set_fullscreen = [](shell_surface *shsurf, uint32_t method, uint32_t framerate, weston_output *output) { _this->setFullscreen((ShellSurface::FullscreenMethod)method, framerate, output);};
     compositor->shell_interface.resize = [](shell_surface *shsurf, weston_seat *ws, uint32_t edges) { _this->dragResize(ws, (ShellSurface::Edges)edges); return 0; };
     compositor->shell_interface.move = [](shell_surface *shsurf, weston_seat *ws) { _this->dragMove(ws); return 0; };
     compositor->shell_interface.set_xwayland = [](shell_surface *shsurf, int x, int y, uint32_t flags) { _this->setXWayland(x, y, flags); };

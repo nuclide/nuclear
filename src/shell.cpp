@@ -421,7 +421,7 @@ void Shell::configureSurface(ShellSurface *surface, int32_t sx, int32_t sy)
 
     if (surface->m_type == ShellSurface::Type::Fullscreen && surface->m_pendingType != ShellSurface::Type::Fullscreen &&
         surface->m_pendingType != ShellSurface::Type::None) {
-        if (surface->m_fullscreen.type == WL_SHELL_SURFACE_FULLSCREEN_METHOD_DRIVER && surfaceIsTopFullscreen(surface)) {
+        if (surface->m_fullscreen.type == ShellSurface::FullscreenMethod::Driver && surfaceIsTopFullscreen(surface)) {
             weston_output_switch_mode(surface->m_fullscreen.output, surface->m_fullscreen.output->original_mode, surface->m_fullscreen.output->original_scale, WESTON_MODE_SWITCH_RESTORE_NATIVE);
         }
     }
@@ -570,11 +570,11 @@ void Shell::configureFullscreen(ShellSurface *shsurf)
     IRect2D bbox = shsurf->surfaceTreeBoundingBox();
 
     switch (shsurf->m_fullscreen.type) {
-    case WL_SHELL_SURFACE_FULLSCREEN_METHOD_DEFAULT:
+    case ShellSurface::FullscreenMethod::Default:
         if (surface->buffer_ref.buffer) {
             shsurf->centerOnOutput(shsurf->m_fullscreen.output);
         } break;
-    case WL_SHELL_SURFACE_FULLSCREEN_METHOD_SCALE: {
+    case ShellSurface::FullscreenMethod::Scale: {
         /* 1:1 mapping between surface and output dimensions */
         if (output->width == bbox.width && output->height == bbox.height) {
             weston_view_set_position(view, output->x - bbox.x, output->y - bbox.y);
@@ -600,7 +600,7 @@ void Shell::configureFullscreen(ShellSurface *shsurf)
         weston_view_set_position(view, x, y);
 
     } break;
-    case WL_SHELL_SURFACE_FULLSCREEN_METHOD_DRIVER:
+    case ShellSurface::FullscreenMethod::Driver:
         if (surfaceIsTopFullscreen(shsurf)) {
             int32_t scale = surface->buffer_viewport.scale;
             weston_mode mode = {0, bbox.width * scale, bbox.height * scale, shsurf->m_fullscreen.framerate, { nullptr, nullptr } };
@@ -614,7 +614,7 @@ void Shell::configureFullscreen(ShellSurface *shsurf)
             }
         }
         break;
-    case WL_SHELL_SURFACE_FULLSCREEN_METHOD_FILL:
+    case ShellSurface::FullscreenMethod::Fill:
         break;
     default:
         break;

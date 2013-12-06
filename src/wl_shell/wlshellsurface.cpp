@@ -153,7 +153,7 @@ void WlShellSurface::setTransient(wl_client *client, wl_resource *resource, wl_r
 void WlShellSurface::setFullscreen(wl_client *client, wl_resource *resource, uint32_t method, uint32_t framerate, wl_resource *output_resource)
 {
     weston_output *output = output_resource ? static_cast<weston_output *>(wl_resource_get_user_data(output_resource)) : nullptr;
-    shsurf()->setFullscreen(method, framerate, output);
+    shsurf()->setFullscreen((ShellSurface::FullscreenMethod)method, framerate, output);
 }
 
 void WlShellSurface::setPopup(wl_client *client, wl_resource *resource, wl_resource *seat_resource, uint32_t serial, wl_resource *parent_resource, int32_t x, int32_t y, uint32_t flags)

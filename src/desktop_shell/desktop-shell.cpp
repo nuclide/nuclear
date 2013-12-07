@@ -41,7 +41,7 @@
 #include "minimizeeffect.h"
 #include "wl_shell/wlshell.h"
 #include "xwlshell.h"
-#include "desktop_shell/desktopshellwindow.h"
+#include "desktopshellwindow.h"
 
 DesktopShell::DesktopShell(struct weston_compositor *ec)
             : Shell(ec)

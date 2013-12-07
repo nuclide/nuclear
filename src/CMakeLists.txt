@@ -20,7 +20,6 @@ set(SOURCES
     effect.cpp
     transform.cpp
     animation.cpp
-    desktop-shell.cpp
     inputpanel.cpp
     binding.cpp
     interface.cpp
@@ -28,6 +27,7 @@ set(SOURCES
     wl_shell/wlshell.cpp
     wl_shell/wlshellsurface.cpp
     desktop_shell/desktopshellwindow.cpp
+    desktop_shell/desktop-shell.cpp
     effects/scaleeffect.cpp
     effects/griddesktops.cpp
     effects/zoomeffect.cpp

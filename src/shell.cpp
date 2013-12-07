@@ -31,7 +31,7 @@
 #include "shellseat.h"
 #include "workspace.h"
 #include "effect.h"
-#include "desktop-shell.h"
+#include "desktop_shell/desktop-shell.h"
 #include "animation.h"
 #include "interface.h"
 

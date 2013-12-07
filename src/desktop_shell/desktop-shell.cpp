@@ -17,6 +17,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <linux/input.h>
 
 #include <wayland-server.h>
@@ -752,3 +753,26 @@ const struct desktop_shell_interface DesktopShell::m_desktop_shell_implementatio
     wrapInterface(&DesktopShell::selectWorkspace),
     wrapInterface(&DesktopShell::quit)
 };
+
+
+WL_EXPORT int
+module_init(struct weston_compositor *ec, int *argc, char *argv[])
+{
+
+    char *client = nullptr;
+
+    for (int i = 0; i < *argc; ++i) {
+        if (char *s = strstr(argv[i], "--nuclear-client=")) {
+            client = strdup(s + 17);
+            --*argc;
+            break;
+        }
+    }
+
+    Shell *shell = Shell::load<DesktopShell>(ec, client);
+    if (!shell) {
+        return -1;
+    }
+
+    return 0;
+}

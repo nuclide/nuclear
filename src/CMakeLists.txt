@@ -11,6 +11,8 @@ include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/effects
 )
 
+set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib/nuclear-shell")
+
 set(SOURCES
     shell.cpp
     layer.cpp
@@ -26,8 +28,6 @@ set(SOURCES
     xwlshell.cpp
     wl_shell/wlshell.cpp
     wl_shell/wlshellsurface.cpp
-    desktop_shell/desktopshellwindow.cpp
-    desktop_shell/desktop-shell.cpp
     effects/scaleeffect.cpp
     effects/griddesktops.cpp
     effects/zoomeffect.cpp
@@ -45,8 +45,17 @@ wayland_add_protocol_server(SOURCES
     input-method
 )
 
-add_library(nuclear-shell SHARED ${SOURCES})
-set_target_properties(nuclear-shell PROPERTIES PREFIX "")
-set_target_properties(nuclear-shell PROPERTIES COMPILE_DEFINITIONS WL_HIDE_DEPRECATED=1)
+add_library(nuclear-shell-common SHARED ${SOURCES})
+set_target_properties(nuclear-shell-common PROPERTIES COMPILE_DEFINITIONS WL_HIDE_DEPRECATED=1)
 
-install(TARGETS nuclear-shell DESTINATION lib/nuclear-shell)
+set(DESKTOP
+    desktop_shell/desktopshellwindow.cpp
+    desktop_shell/desktop-shell.cpp)
+
+add_library(nuclear-desktop-shell SHARED ${DESKTOP})
+set_target_properties(nuclear-desktop-shell PROPERTIES PREFIX "")
+set_target_properties(nuclear-desktop-shell PROPERTIES COMPILE_DEFINITIONS WL_HIDE_DEPRECATED=1)
+target_link_libraries(nuclear-desktop-shell nuclear-shell-common)
+
+install(TARGETS nuclear-shell-common DESTINATION lib/nuclear-shell)
+install(TARGETS nuclear-desktop-shell DESTINATION lib/nuclear-shell)

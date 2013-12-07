@@ -16,10 +16,8 @@
  */
 
 #include <stdio.h>
-#include <stdlib.h>
 #include <sys/time.h>
 #include <linux/input.h>
-#include <string.h>
 #include <signal.h>
 
 #include <wayland-server.h>
@@ -31,7 +29,6 @@
 #include "shellseat.h"
 #include "workspace.h"
 #include "effect.h"
-#include "desktop_shell/desktop-shell.h"
 #include "animation.h"
 #include "interface.h"
 
@@ -1110,27 +1107,4 @@ void Shell::launchShellProcess()
 
     if (!m_child.client)
         weston_log("not able to start %s\n", m_clientPath);
-}
-
-
-WL_EXPORT int
-module_init(struct weston_compositor *ec, int *argc, char *argv[])
-{
-
-    char *client = nullptr;
-
-    for (int i = 0; i < *argc; ++i) {
-        if (char *s = strstr(argv[i], "--nuclear-client=")) {
-            client = strdup(s + 17);
-            --*argc;
-            break;
-        }
-    }
-
-    Shell *shell = Shell::load<DesktopShell>(ec, client);
-    if (!shell) {
-        return -1;
-    }
-
-    return 0;
 }

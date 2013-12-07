@@ -47,7 +47,7 @@ struct SurfaceTransform {
 struct Grab : public ShellGrab {
     void focus() override
     {
-        Workspace *currWs = shell()->currentWorkspace();
+        Workspace *currWs = Shell::instance()->currentWorkspace();
 
         wl_fixed_t sx, sy;
         weston_view *view = weston_compositor_pick_view(pointer()->seat->compositor, pointer()->x, pointer()->y, &sx, &sy);
@@ -214,7 +214,7 @@ void ScaleEffect::run(struct weston_seat *ws)
         m_seat = ws;
         m_chosenSurface = nullptr;
         m_grab->surface = nullptr;
-        shell()->startGrab(m_grab, ws, Cursor::Arrow);
+        m_grab->start(ws, Cursor::Arrow);
         shell()->hidePanels();
         if (ws->pointer->focus) {
             ShellSurface *s = Shell::getShellSurface(ws->pointer->focus->surface);

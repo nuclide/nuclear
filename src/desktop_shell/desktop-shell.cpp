@@ -136,7 +136,7 @@ void DesktopShell::setBusyCursor(ShellSurface *surface, struct weston_seat *seat
         return;
 
     grab->surface = surface;
-    startGrab(grab, seat, Cursor::Busy);
+    grab->start(seat, Cursor::Busy);
 }
 
 void DesktopShell::endBusyCursor(struct weston_seat *seat)
@@ -318,7 +318,7 @@ public:
         m_grab = new PanelGrab;
         m_grab->panel = this;
         weston_seat *seat = container_of(m_shell->compositor()->seat_list.next, weston_seat, link);
-        m_shell->startGrab(m_grab, seat);
+        m_grab->start(seat);
     }
     void setPosition(wl_client *client, wl_resource *resource, uint32_t pos)
     {
@@ -583,7 +583,7 @@ void DesktopShell::setPopup(wl_client *client, wl_resource *resource, uint32_t i
     weston_view_from_global_fixed(sv, seat->pointer->x, seat->pointer->y, &sx, &sy);
     weston_pointer_set_focus(seat->pointer, sv, sx, sy);
 
-    startGrab(grab, seat);
+    grab->start(seat);
 }
 
 void DesktopShell::unlock(struct wl_client *client, struct wl_resource *resource)
@@ -725,7 +725,7 @@ void DesktopShell::createGrab(wl_client *client, wl_resource *resource, uint32_t
     wl_fixed_t sx, sy;
     weston_view *view = weston_compositor_pick_view(compositor(), seat->pointer->x, seat->pointer->y, &sx, &sy);
     grab->surfFocus = view;
-    startGrab(grab, seat);
+    grab->start(seat);
 
     weston_pointer_set_focus(seat->pointer, view, sx, sy);
     desktop_shell_grab_send_focus(grab->resource, view->surface->resource, sx, sy);

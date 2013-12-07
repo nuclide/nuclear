@@ -55,7 +55,7 @@ struct DGrab : public ShellGrab {
                 moving = true;
 
                 surface->workspace()->removeSurface(surface);
-                shell()->putInLimbo(surface);
+                Shell::instance()->putInLimbo(surface);
                 weston_matrix *matrix = &surfTransform.matrix;
                 weston_matrix_init(matrix);
                 weston_matrix_scale(matrix, scale, scale, 1.f);
@@ -93,10 +93,10 @@ struct DGrab : public ShellGrab {
         } else {
             int x = wl_fixed_to_int(pointer()->x);
             int y = wl_fixed_to_int(pointer()->y);
-            int numWs = shell()->numWorkspaces();
+            int numWs = Shell::instance()->numWorkspaces();
             int ws = 0;
             for (int i = 0; i < numWs; ++i) {
-                Workspace *w = shell()->workspace(i);
+                Workspace *w = Shell::instance()->workspace(i);
                 if (w->boundingBox().contains(x, y)) {
                     ws = i;
                     break;
@@ -105,7 +105,7 @@ struct DGrab : public ShellGrab {
 
             if (surface && moving) {
                 surface->removeTransform(&surfTransform);
-                Workspace *w = shell()->workspace(ws);
+                Workspace *w = Shell::instance()->workspace(ws);
                 w->addSurface(surface);
 
                 float x = wl_fixed_to_int(pointer()->x + dx);
@@ -184,7 +184,7 @@ void GridDesktops::run(struct weston_seat *ws)
         shell()->showAllWorkspaces();
         shell()->hidePanels();
         m_grab->surface = nullptr;
-        shell()->startGrab(m_grab, ws, Cursor::Arrow);
+        m_grab->start(ws, Cursor::Arrow);
         m_setWs = shell()->currentWorkspace()->number();
 
         weston_output *out = shell()->currentWorkspace()->output();

@@ -67,8 +67,7 @@ private:
 };
 
 ShellGrab::ShellGrab()
-         : m_shell(nullptr)
-         , m_pointer(nullptr)
+         : m_pointer(nullptr)
 {
     m_grab.base.interface = &s_shellGrabInterface;
     m_grab.parent = this;
@@ -77,6 +76,20 @@ ShellGrab::ShellGrab()
 ShellGrab::~ShellGrab()
 {
     end();
+}
+
+void ShellGrab::start(weston_seat *seat)
+{
+    ShellSeat::shellSeat(seat)->endPopupGrab();
+
+    m_pointer = seat->pointer;
+    weston_pointer_start_grab(m_pointer, &m_grab.base);
+}
+
+void ShellGrab::start(weston_seat *seat, Cursor c)
+{
+    start(seat);
+    setCursor(c);
 }
 
 void ShellGrab::end()
@@ -89,7 +102,7 @@ void ShellGrab::end()
 
 void ShellGrab::motion(uint32_t time, wl_fixed_t x, wl_fixed_t y)
 {
-    m_shell->movePointer(m_pointer, time, x, y);
+    Shell::instance()->movePointer(m_pointer, time, x, y);
 }
 
 ShellGrab *ShellGrab::fromGrab(weston_pointer_grab *grab)
@@ -104,8 +117,8 @@ ShellGrab *ShellGrab::fromGrab(weston_pointer_grab *grab)
 
 void ShellGrab::setCursor(Cursor cursor)
 {
-    shell()->setGrabCursor(cursor);
-    weston_pointer_set_focus(pointer(), shell()->m_grabSurface, wl_fixed_from_int(0), wl_fixed_from_int(0));
+    Shell::instance()->setGrabCursor(cursor);
+    weston_pointer_set_focus(pointer(), Shell::instance()->m_grabSurface, wl_fixed_from_int(0), wl_fixed_from_int(0));
 }
 
 void ShellGrab::unsetCursor()
@@ -715,25 +728,6 @@ void Shell::activateSurface(struct weston_seat *seat, uint32_t time, uint32_t bu
             weston_surface_activate(focus->surface, seat);
         }
     };
-}
-
-void Shell::startGrab(ShellGrab *grab, weston_seat *seat)
-{
-    ShellSeat::shellSeat(seat)->endPopupGrab();
-
-    grab->m_shell = this;
-    weston_pointer *pointer = seat->pointer;
-    grab->m_pointer = pointer;
-
-    weston_pointer_start_grab(pointer, &grab->m_grab.base);
-}
-
-void Shell::startGrab(ShellGrab *grab, weston_seat *seat, Cursor cursor)
-{
-    startGrab(grab, seat);
-
-    setGrabCursor(cursor);
-    weston_pointer_set_focus(seat->pointer, m_grabSurface, wl_fixed_from_int(0), wl_fixed_from_int(0));
 }
 
 static void configure_static_surface(struct weston_surface *es, Layer *layer)

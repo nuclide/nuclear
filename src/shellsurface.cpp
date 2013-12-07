@@ -492,7 +492,7 @@ void ShellSurface::dragMove(struct weston_seat *ws)
     move->shsurf = this;
     m_runningGrab = move;
 
-    m_shell->startGrab(move, ws, Cursor::Move);
+    move->start(ws, Cursor::Move);
     moveStartSignal(this);
 }
 
@@ -568,7 +568,7 @@ void ShellSurface::dragResize(weston_seat *ws, Edges edges)
     grab->shsurf = this;
     m_runningGrab = grab;
 
-    m_shell->startGrab(grab, ws, (Cursor)e);
+    grab->start(ws, (Cursor)e);
 }
 
 /*

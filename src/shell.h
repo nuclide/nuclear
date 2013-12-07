@@ -59,9 +59,10 @@ public:
     ShellGrab();
     virtual ~ShellGrab();
 
+    void start(weston_seat *seat);
+    void start(weston_seat *seat, Cursor c);
     void end();
 
-    Shell *shell() const { return m_shell; }
     weston_pointer *pointer() const { return m_pointer; }
 
     static ShellGrab *fromGrab(weston_pointer_grab *grab);
@@ -75,7 +76,6 @@ protected:
     void unsetCursor();
 
 private:
-    Shell *m_shell;
     weston_pointer *m_pointer;
     struct Grab {
         weston_pointer_grab base;
@@ -114,9 +114,6 @@ public:
     void setGrabSurface(struct weston_surface *surface);
     void addPanelSurface(weston_surface *surface, weston_output *output, PanelPosition pos);
     void addOverlaySurface(struct weston_surface *surface, struct weston_output *output);
-
-    void startGrab(ShellGrab *grab, weston_seat *seat);
-    void startGrab(ShellGrab *grab, weston_seat *seat, Cursor cursor);
 
     void showPanels();
     void hidePanels();

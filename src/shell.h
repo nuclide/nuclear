@@ -139,8 +139,6 @@ protected:
     void quit();
     inline const ShellSurfaceList &surfaces() const { return m_surfaces; }
     virtual void setGrabCursor(uint32_t cursor) {}
-    virtual void setBusyCursor(ShellSurface *shsurf, struct weston_seat *seat) {}
-    virtual void endBusyCursor(struct weston_seat *seat) {}
     void fadeSplash();
     void addWorkspace(Workspace *ws);
     virtual void panelConfigure(struct weston_surface *es, int32_t sx, int32_t sy, PanelPosition pos);

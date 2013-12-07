@@ -35,8 +35,6 @@ public:
 protected:
     virtual void init();
     virtual void setGrabCursor(uint32_t);
-    virtual void setBusyCursor(ShellSurface *shsurf, struct weston_seat *seat) override;
-    virtual void endBusyCursor(struct weston_seat *seat) override;
     virtual void panelConfigure(weston_surface *es, int32_t sx, int32_t sy, Shell::PanelPosition pos) override;
 
 private:
@@ -47,6 +45,8 @@ private:
     void unbind(struct wl_resource *resource);
     void moveBinding(struct weston_seat *seat, uint32_t time, uint32_t button);
     void resizeBinding(struct weston_seat *seat, uint32_t time, uint32_t button);
+    void setBusyCursor(ShellSurface *shsurf, weston_seat *seat);
+    void endBusyCursor(weston_seat *seat);
 
     void setBackground(struct wl_client *client, struct wl_resource *resource, struct wl_resource *output_resource,
                                              struct wl_resource *surface_resource);

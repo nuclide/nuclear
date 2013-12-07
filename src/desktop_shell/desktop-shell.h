@@ -26,6 +26,7 @@
 class InputPanel;
 class WlShell;
 class XWlShell;
+class DesktopShellWorkspace;
 
 class DesktopShell : public Shell {
 public:
@@ -40,7 +41,7 @@ protected:
 
 private:
     void sendInitEvents();
-    void workspaceAdded(Workspace *ws);
+    void workspaceAdded(DesktopShellWorkspace *ws);
     void surfaceResponsivenessChanged(ShellSurface *shsurf, bool responsive);
     void bind(struct wl_client *client, uint32_t version, uint32_t id);
     void unbind(struct wl_resource *resource);

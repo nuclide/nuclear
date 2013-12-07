@@ -18,7 +18,6 @@
 #include "workspace.h"
 #include "shell.h"
 #include "shellsurface.h"
-#include "wayland-desktop-shell-server-protocol.h"
 #include "utils.h"
 
 Workspace::Workspace(Shell *shell, int number)
@@ -62,12 +61,6 @@ Workspace::~Workspace()
     destroyedSignal(this);
     weston_view_destroy(m_background);
     weston_surface_destroy(m_rootSurface->surface);
-}
-
-void Workspace::init(wl_client *client)
-{
-    m_resource = wl_resource_create(client, &desktop_shell_workspace_interface, 1, 0);
-    wl_resource_set_implementation(m_resource, &s_implementation, this, 0);
 }
 
 void Workspace::createBackgroundView(weston_surface *bkg)
@@ -165,23 +158,5 @@ void Workspace::remove()
 void Workspace::setActive(bool active)
 {
     m_active = active;
-    if (active) {
-        desktop_shell_workspace_send_activated(m_resource);
-    } else {
-        desktop_shell_workspace_send_deactivated(m_resource);
-    }
+    activeChangedSignal();
 }
-
-Workspace *Workspace::fromResource(wl_resource *res)
-{
-    return static_cast<Workspace *>(wl_resource_get_user_data(res));
-}
-
-void Workspace::removed(wl_client *client, wl_resource *res)
-{
-    delete this;
-}
-
-const struct desktop_shell_workspace_interface Workspace::s_implementation = {
-    wrapInterface(&Workspace::removed)
-};

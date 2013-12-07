@@ -358,7 +358,7 @@ void Shell::workspaceRemoved(Workspace *ws)
     if (nextWs >= (int)m_workspaces.size()) {
         nextWs = m_workspaces.size() - 1;
     }
-    if (ws->active()) {
+    if (ws->isActive()) {
         m_currentWorkspace = nextWs;
     }
 

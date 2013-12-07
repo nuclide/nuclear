@@ -43,6 +43,7 @@
 #include "wl_shell/wlshell.h"
 #include "xwlshell.h"
 #include "desktopshellwindow.h"
+#include "desktopshellworkspace.h"
 
 DesktopShell::DesktopShell(struct weston_compositor *ec)
             : Shell(ec)
@@ -151,8 +152,10 @@ void DesktopShell::endBusyCursor(struct weston_seat *seat)
 void DesktopShell::sendInitEvents()
 {
     for (uint i = 0; i < numWorkspaces(); ++i) {
-        workspace(i)->init(m_child.client);
-        workspaceAdded(workspace(i));
+        Workspace *ws = workspace(i);
+        DesktopShellWorkspace *dws = ws->findInterface<DesktopShellWorkspace>();
+        dws->init(m_child.client);
+        workspaceAdded(dws);
     }
 
     for (ShellSurface *shsurf: surfaces()) {
@@ -177,9 +180,9 @@ void DesktopShell::sendInitEvents()
     }
 }
 
-void DesktopShell::workspaceAdded(Workspace *ws)
+void DesktopShell::workspaceAdded(DesktopShellWorkspace *ws)
 {
-    desktop_shell_send_workspace_added(m_child.desktop_shell, ws->resource(), ws->active());
+    desktop_shell_send_workspace_added(m_child.desktop_shell, ws->resource(), ws->workspace()->isActive());
 }
 
 void DesktopShell::surfaceResponsivenessChanged(ShellSurface *shsurf, bool responsiveness)
@@ -631,14 +634,16 @@ void DesktopShell::addOverlay(struct wl_client *client, struct wl_resource *reso
 void DesktopShell::addWorkspace(wl_client *client, wl_resource *resource)
 {
     Workspace *ws = new Workspace(this, numWorkspaces());
-    ws->init(client);
+    DesktopShellWorkspace *dws = new DesktopShellWorkspace;
+    ws->addInterface(dws);
+    dws->init(client);
     Shell::addWorkspace(ws);
-    workspaceAdded(ws);
+    workspaceAdded(dws);
 }
 
 void DesktopShell::selectWorkspace(wl_client *client, wl_resource *resource, wl_resource *workspace_resource)
 {
-    Shell::selectWorkspace(Workspace::fromResource(workspace_resource)->number());
+    Shell::selectWorkspace(DesktopShellWorkspace::fromResource(workspace_resource)->workspace()->number());
 }
 
 class ClientGrab : public ShellGrab {

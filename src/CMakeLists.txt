@@ -50,6 +50,7 @@ set_target_properties(nuclear-shell-common PROPERTIES COMPILE_DEFINITIONS WL_HID
 
 set(DESKTOP
     desktop_shell/desktopshellwindow.cpp
+    desktop_shell/desktopshellworkspace.cpp
     desktop_shell/desktop-shell.cpp)
 
 add_library(nuclear-desktop-shell SHARED ${DESKTOP})

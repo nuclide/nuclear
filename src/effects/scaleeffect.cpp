@@ -25,8 +25,6 @@
 #include "shellseat.h"
 #include "binding.h"
 
-#include "wayland-desktop-shell-server-protocol.h"
-
 const float INACTIVE_ALPHA = 0.8;
 const int ALPHA_ANIM_DURATION = 200;
 
@@ -216,7 +214,7 @@ void ScaleEffect::run(struct weston_seat *ws)
         m_seat = ws;
         m_chosenSurface = nullptr;
         m_grab->surface = nullptr;
-        shell()->startGrab(m_grab, ws, DESKTOP_SHELL_CURSOR_ARROW);
+        shell()->startGrab(m_grab, ws, Cursor::Arrow);
         shell()->hidePanels();
         if (ws->pointer->focus) {
             ShellSurface *s = Shell::getShellSurface(ws->pointer->focus->surface);

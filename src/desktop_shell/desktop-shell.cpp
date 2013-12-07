@@ -91,9 +91,9 @@ void DesktopShell::init()
     m_inputPanel = new InputPanel(compositor()->wl_display);
 }
 
-void DesktopShell::setGrabCursor(uint32_t cursor)
+void DesktopShell::setGrabCursor(Cursor cursor)
 {
-    desktop_shell_send_grab_cursor(m_child.desktop_shell, cursor);
+    desktop_shell_send_grab_cursor(m_child.desktop_shell, (uint32_t)cursor);
 }
 
 ShellSurface *DesktopShell::createShellSurface(weston_surface *surface, const weston_shell_client *client)
@@ -136,7 +136,7 @@ void DesktopShell::setBusyCursor(ShellSurface *surface, struct weston_seat *seat
         return;
 
     grab->surface = surface;
-    startGrab(grab, seat, DESKTOP_SHELL_CURSOR_BUSY);
+    startGrab(grab, seat, Cursor::Busy);
 }
 
 void DesktopShell::endBusyCursor(struct weston_seat *seat)

@@ -27,8 +27,6 @@
 #include "shellseat.h"
 #include "workspace.h"
 
-#include "wayland-desktop-shell-server-protocol.h"
-
 ShellSurface::ShellSurface(Shell *shell, struct weston_surface *surface)
             : m_shell(shell)
             , m_workspace(nullptr)
@@ -494,7 +492,7 @@ void ShellSurface::dragMove(struct weston_seat *ws)
     move->shsurf = this;
     m_runningGrab = move;
 
-    m_shell->startGrab(move, ws, DESKTOP_SHELL_CURSOR_MOVE);
+    m_shell->startGrab(move, ws, Cursor::Move);
     moveStartSignal(this);
 }
 
@@ -570,7 +568,7 @@ void ShellSurface::dragResize(weston_seat *ws, Edges edges)
     grab->shsurf = this;
     m_runningGrab = grab;
 
-    m_shell->startGrab(grab, ws, e);
+    m_shell->startGrab(grab, ws, (Cursor)e);
 }
 
 /*

@@ -25,8 +25,6 @@
 #include "transform.h"
 #include "binding.h"
 
-#include "wayland-desktop-shell-server-protocol.h"
-
 struct DGrab : public ShellGrab {
     void focus() override
     {
@@ -65,7 +63,7 @@ struct DGrab : public ShellGrab {
                 surface->setPosition(surface->transformedX(), surface->transformedY());
                 surface->addTransform(&surfTransform);
                 surface->moveStartSignal(surface);
-                setCursor(DESKTOP_SHELL_CURSOR_MOVE);
+                setCursor(Cursor::Move);
             }
 
             surface->setPosition(pos_x, pos_y);
@@ -186,7 +184,7 @@ void GridDesktops::run(struct weston_seat *ws)
         shell()->showAllWorkspaces();
         shell()->hidePanels();
         m_grab->surface = nullptr;
-        shell()->startGrab(m_grab, ws, DESKTOP_SHELL_CURSOR_ARROW);
+        shell()->startGrab(m_grab, ws, Cursor::Arrow);
         m_setWs = shell()->currentWorkspace()->number();
 
         weston_output *out = shell()->currentWorkspace()->output();

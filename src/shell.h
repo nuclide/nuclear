@@ -37,6 +37,21 @@ class Animation;
 
 typedef std::list<ShellSurface *> ShellSurfaceList;
 
+enum class Cursor {
+    None = 0,
+    ResizeTop = 1,
+    ResizeBottom = 2,
+    Arrow = 3,
+    ResizeLeft = 4,
+    ResizeTopLeft = 5,
+    ResizeBottomLeft = 6,
+    Move = 7,
+    ResizeRight = 8,
+    ResizeTopRight = 9,
+    ResizeBottomRight = 10,
+    Busy = 11
+};
+
 class Shell;
 
 class ShellGrab {
@@ -56,7 +71,7 @@ protected:
     virtual void motion(uint32_t time, wl_fixed_t x, wl_fixed_t y);
     virtual void button(uint32_t time, uint32_t button, uint32_t state) {}
     virtual void cancel() {}
-    void setCursor(uint32_t cursor);
+    void setCursor(Cursor cursor);
     void unsetCursor();
 
 private:
@@ -86,7 +101,7 @@ public:
     virtual ~Shell();
 
     void launchShellProcess();
-    virtual ShellSurface *createShellSurface(struct weston_surface *surface, const struct weston_shell_client *client);
+    virtual ShellSurface *createShellSurface(weston_surface *surface, const weston_shell_client *client);
     void removeShellSurface(ShellSurface *surface);
     static ShellSurface *getShellSurface(const struct weston_surface *surf);
     static weston_view *defaultView(const weston_surface *surface);
@@ -100,7 +115,8 @@ public:
     void addPanelSurface(weston_surface *surface, weston_output *output, PanelPosition pos);
     void addOverlaySurface(struct weston_surface *surface, struct weston_output *output);
 
-    void startGrab(ShellGrab *grab, weston_seat *seat, int32_t cursor = -1);
+    void startGrab(ShellGrab *grab, weston_seat *seat);
+    void startGrab(ShellGrab *grab, weston_seat *seat, Cursor cursor);
 
     void showPanels();
     void hidePanels();
@@ -138,7 +154,7 @@ protected:
     virtual void init();
     void quit();
     inline const ShellSurfaceList &surfaces() const { return m_surfaces; }
-    virtual void setGrabCursor(uint32_t cursor) {}
+    virtual void setGrabCursor(Cursor cursor) {}
     void fadeSplash();
     void addWorkspace(Workspace *ws);
     virtual void panelConfigure(struct weston_surface *es, int32_t sx, int32_t sy, PanelPosition pos);

@@ -36,6 +36,7 @@ protected:
     virtual void init();
     virtual void setGrabCursor(uint32_t);
     virtual void panelConfigure(weston_surface *es, int32_t sx, int32_t sy, Shell::PanelPosition pos) override;
+    virtual ShellSurface *createShellSurface(weston_surface *surface, const weston_shell_client *client) override;
 
 private:
     void sendInitEvents();

@@ -15,36 +15,40 @@
  * License along with this library.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#ifndef DESKTOPSHELLWINDOW_H
+#define DESKTOPSHELLWINDOW_H
+
+#include <wayland-server.h>
+
 #include "interface.h"
 
-Object::Object()
-      : m_deleting(false)
-{
-}
+class ShellSurface;
 
-Object::~Object()
+class DesktopShellWindow : public Interface
 {
-    m_deleting = true;
-    for (Interface *iface: m_ifaces) {
-        delete iface;
-    }
-}
+public:
+    DesktopShellWindow();
+    ~DesktopShellWindow();
 
-void Object::addInterface(Interface *iface)
-{
-    m_ifaces.push_back(iface);
-    iface->m_obj = this;
-    iface->added();
-}
+    void create();
 
-void Object::destroy()
-{
-    if (!m_deleting) {
-        delete this;
-    }
-}
+protected:
+    virtual void added() override;
 
-Interface::Interface()
-         : m_obj(nullptr)
-{
-}
+private:
+    ShellSurface *shsurf();
+    void surfaceTypeChanged();
+    void activeChanged();
+    void destroy();
+    void sendState();
+    void sendTitle();
+    void setState(wl_client *client, wl_resource *resource, int32_t state);
+    void close(wl_client *client, wl_resource *resource);
+
+    wl_resource *m_resource;
+    int32_t m_state;
+
+    static const struct desktop_shell_window_interface s_implementation;
+};
+
+#endif

@@ -41,6 +41,7 @@
 #include "minimizeeffect.h"
 #include "wl_shell/wlshell.h"
 #include "xwlshell.h"
+#include "desktop_shell/desktopshellwindow.h"
 
 DesktopShell::DesktopShell(struct weston_compositor *ec)
             : Shell(ec)
@@ -92,6 +93,13 @@ void DesktopShell::init()
 void DesktopShell::setGrabCursor(uint32_t cursor)
 {
     desktop_shell_send_grab_cursor(m_child.desktop_shell, cursor);
+}
+
+ShellSurface *DesktopShell::createShellSurface(weston_surface *surface, const weston_shell_client *client)
+{
+    ShellSurface *s = Shell::createShellSurface(surface, client);
+    s->addInterface(new DesktopShellWindow);
+    return s;
 }
 
 struct BusyGrab : public ShellGrab {
@@ -147,7 +155,10 @@ void DesktopShell::sendInitEvents()
     }
 
     for (ShellSurface *shsurf: surfaces()) {
-        shsurf->advertize();
+        DesktopShellWindow *w = shsurf->findInterface<DesktopShellWindow>();
+        if (w) {
+            w->create();
+        }
     }
 
     m_outputs.clear();

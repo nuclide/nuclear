@@ -86,7 +86,7 @@ public:
     virtual ~Shell();
 
     void launchShellProcess();
-    ShellSurface *createShellSurface(struct weston_surface *surface, const struct weston_shell_client *client);
+    virtual ShellSurface *createShellSurface(struct weston_surface *surface, const struct weston_shell_client *client);
     void removeShellSurface(ShellSurface *surface);
     static ShellSurface *getShellSurface(const struct weston_surface *surf);
     static weston_view *defaultView(const weston_surface *surface);

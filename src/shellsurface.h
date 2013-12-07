@@ -67,7 +67,6 @@ public:
     bool updateType();
     void map(int32_t x, int32_t y);
     void unmapped();
-    void advertize();
 
     void setTopLevel();
     void setTransient(weston_surface *parent, int x, int y, bool inactive);
@@ -115,7 +114,6 @@ public:
     void dragResize(weston_seat *ws, Edges edges);
     void popupDone();
 
-    void setState(int state);
     void setActive(bool active);
     bool isActive() const;
     bool isMinimized() const;
@@ -136,18 +134,19 @@ public:
     Signal<ShellSurface *> minimizedSignal;
     Signal<ShellSurface *> unminimizedSignal;
     Signal<> popupDoneSignal;
+    Signal<> typeChangedSignal;
+    Signal<> titleChangedSignal;
+    Signal<> activeChangedSignal;
 
 private:
     void unsetFullscreen();
     void unsetMaximized();
     void mapPopup();
     void centerOnOutput(struct weston_output *output);
-    void destroyWindow();
     void sendState();
 
     Shell *m_shell;
     Workspace *m_workspace;
-    struct wl_resource *m_windowResource;
     struct weston_surface *m_surface;
     weston_view *m_view;
     WlListener m_surfaceDestroyListener;
@@ -158,11 +157,11 @@ private:
     std::string m_class;
     struct weston_output *m_output;
     int32_t m_savedX, m_savedY;
-    int32_t m_state;
-    bool m_windowAdvertized;
     bool m_acceptState;
     ShellGrab *m_runningGrab;
     int32_t m_lastWidth, m_lastHeight;
+    bool m_active;
+    bool m_minimized;
 
     struct weston_surface *m_parent;
     struct {
@@ -183,9 +182,6 @@ private:
         weston_view *blackView;
         struct weston_output *output;
     } m_fullscreen;
-
-    static void set_state(struct wl_client *client, struct wl_resource *resource, int32_t state);
-    static const struct desktop_shell_window_interface m_window_implementation;
 
     friend class Shell;
     friend class Layer;

@@ -32,15 +32,14 @@
 ShellSurface::ShellSurface(Shell *shell, struct weston_surface *surface)
             : m_shell(shell)
             , m_workspace(nullptr)
-            , m_windowResource(nullptr)
             , m_surface(surface)
             , m_view(weston_view_create(surface))
             , m_type(Type::None)
             , m_pendingType(Type::None)
-            , m_state(DESKTOP_SHELL_WINDOW_STATE_INACTIVE)
-            , m_windowAdvertized(false)
             , m_acceptState(true)
             , m_runningGrab(nullptr)
+            , m_active(false)
+            , m_minimized(false)
             , m_parent(nullptr)
 {
     m_popup.seat = nullptr;
@@ -65,15 +64,7 @@ ShellSurface::~ShellSurface()
         weston_surface_destroy(m_fullscreen.blackView->surface);
     }
     m_surface->configure = nullptr;
-    destroyWindow();
     destroyedSignal();
-}
-
-#define _this static_cast<ShellSurface *>(wl_resource_get_user_data(resource))
-void ShellSurface::set_state(struct wl_client *client, struct wl_resource *resource, int32_t state)
-{
-    ShellSurface *shsurf = _this;
-    shsurf->setState(state);
 }
 
 void ShellSurface::close()
@@ -89,65 +80,28 @@ void ShellSurface::close()
     }
 }
 
-const struct desktop_shell_window_interface ShellSurface::m_window_implementation = {
-    set_state,
-    wrapInterface(&ShellSurface::close)
-};
-
-void ShellSurface::destroyWindow()
+void ShellSurface::setActive(bool active)
 {
-    if (m_windowResource) {
-        desktop_shell_window_send_removed(m_windowResource);
-        wl_resource_destroy(m_windowResource);
-        m_windowResource = nullptr;
-    }
+    m_active = active;
+    activeChangedSignal();
 }
 
-void ShellSurface::setState(int state)
+bool ShellSurface::isActive() const
+{
+    return m_active;
+}
+
+bool ShellSurface::isMinimized() const
+{
+    return m_minimized;
+}
+
+void ShellSurface::activate()
 {
     if (!m_acceptState) {
         return;
     }
 
-    if (m_state & DESKTOP_SHELL_WINDOW_STATE_MINIMIZED && !(state & DESKTOP_SHELL_WINDOW_STATE_MINIMIZED)) {
-        unminimize();
-    } else if (state & DESKTOP_SHELL_WINDOW_STATE_MINIMIZED && !(m_state & DESKTOP_SHELL_WINDOW_STATE_MINIMIZED)) {
-        minimize();
-        if (isActive()) {
-            deactivate();
-        }
-    }
-
-    if (state & DESKTOP_SHELL_WINDOW_STATE_ACTIVE && !(state & DESKTOP_SHELL_WINDOW_STATE_MINIMIZED)) {
-        activate();
-    }
-
-    m_state = state;
-    sendState();
-}
-
-void ShellSurface::setActive(bool active)
-{
-    if (active) {
-        m_state |= DESKTOP_SHELL_WINDOW_STATE_ACTIVE;
-    } else {
-        m_state &= ~DESKTOP_SHELL_WINDOW_STATE_ACTIVE;
-    }
-    sendState();
-}
-
-bool ShellSurface::isActive() const
-{
-    return m_state & DESKTOP_SHELL_WINDOW_STATE_ACTIVE;
-}
-
-bool ShellSurface::isMinimized() const
-{
-    return m_state & DESKTOP_SHELL_WINDOW_STATE_MINIMIZED;
-}
-
-void ShellSurface::activate()
-{
     weston_seat *seat = container_of(weston_surface()->compositor->seat_list.next, weston_seat, link);
     m_shell->selectWorkspace(m_workspace->number());
     ShellSeat::shellSeat(seat)->activate(this);
@@ -155,18 +109,30 @@ void ShellSurface::activate()
 
 void ShellSurface::deactivate()
 {
+    if (!m_acceptState) {
+        return;
+    }
+
     weston_seat *seat = container_of(weston_surface()->compositor->seat_list.next, weston_seat, link);
     ShellSeat::shellSeat(seat)->activate((ShellSurface*)nullptr);
 }
 
 void ShellSurface::minimize()
 {
+    if (!m_acceptState) {
+        return;
+    }
+
     hide();
     minimizedSignal(this);
 }
 
 void ShellSurface::unminimize()
 {
+    if (!m_acceptState) {
+        return;
+    }
+
     show();
     unminimizedSignal(this);
 }
@@ -180,21 +146,6 @@ void ShellSurface::hide()
 {
     wl_list_remove(&m_view->layer_link);
     wl_list_init(&m_view->layer_link);
-}
-
-void ShellSurface::sendState()
-{
-    if (m_windowResource) {
-        desktop_shell_window_send_state_changed(m_windowResource, m_state);
-    }
-}
-
-void ShellSurface::advertize()
-{
-    m_windowResource = wl_resource_create(m_shell->shellClient(), &desktop_shell_window_interface, 1, 0);
-    wl_resource_set_implementation(m_windowResource, &m_window_implementation, this, 0);
-    desktop_shell_send_window_added(m_shell->shellClientResource(), m_windowResource, m_title.c_str(), m_state);
-    m_windowAdvertized = true;
 }
 
 bool ShellSurface::updateType()
@@ -229,13 +180,7 @@ bool ShellSurface::updateType()
                 break;
         }
 
-        if (m_type == Type::TopLevel || m_type == Type::Maximized || m_type == Type::Fullscreen) {
-            if (!m_windowAdvertized) {
-                advertize();
-            }
-        } else {
-            destroyWindow();
-        }
+        typeChangedSignal();
         return true;
     }
     return false;
@@ -308,9 +253,7 @@ void ShellSurface::setXWayland(int x, int y, bool inactive)
 void ShellSurface::setTitle(const char *title)
 {
     m_title = title;
-    if (m_windowResource) {
-        desktop_shell_window_send_set_title(m_windowResource, title);
-    }
+    titleChangedSignal();
 }
 
 void ShellSurface::setClass(const char *c)

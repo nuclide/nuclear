@@ -27,6 +27,7 @@ set(SOURCES
     xwlshell.cpp
     wl_shell/wlshell.cpp
     wl_shell/wlshellsurface.cpp
+    desktop_shell/desktopshellwindow.cpp
     effects/scaleeffect.cpp
     effects/griddesktops.cpp
     effects/zoomeffect.cpp

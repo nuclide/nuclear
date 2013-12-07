@@ -43,9 +43,13 @@ private:
 class Interface
 {
 public:
+    Interface();
     virtual ~Interface() {}
 
     Object *object() { return m_obj; }
+
+protected:
+    virtual void added() {}
 
 private:
     Object *m_obj;

@@ -19,6 +19,7 @@
 #define DESKTOP_SHELL_H
 
 #include <list>
+#include <unordered_map>
 
 #include "shell.h"
 #include "utils.h"
@@ -43,6 +44,7 @@ private:
     void unbind(struct wl_resource *resource);
     void moveBinding(struct weston_seat *seat, uint32_t time, uint32_t button);
     void resizeBinding(struct weston_seat *seat, uint32_t time, uint32_t button);
+    bool isTrusted(wl_client *client, const char *interface) const;
 
     void setBackground(struct wl_client *client, struct wl_resource *resource, struct wl_resource *output_resource,
                                              struct wl_resource *surface_resource);
@@ -58,6 +60,7 @@ private:
     void addWorkspace(wl_client *client, wl_resource *resource);
     void selectWorkspace(wl_client *client, wl_resource *resource, wl_resource *workspace_resource);
     void quit(wl_client *client, wl_resource *resource);
+    void addTrustedClient(wl_client *client, wl_resource *resource, int32_t fd, const char *interface);
 
     static void configurePopup(weston_surface *es, int32_t sx, int32_t sy, int32_t width, int32_t height);
 
@@ -70,6 +73,7 @@ private:
     };
     std::list<Output> m_outputs;
     InputPanel *m_inputPanel;
+    std::unordered_map<std::string, std::list<wl_client *>> m_trustedClients;
 };
 
 #endif

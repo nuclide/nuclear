@@ -126,6 +126,26 @@ void DesktopShell::endBusyCursor(struct weston_seat *seat)
     }
 }
 
+bool DesktopShell::isTrusted(wl_client *client, const char *interface) const
+{
+    if (client == m_child.client) {
+        return true;
+    }
+
+    auto it = m_trustedClients.find(interface);
+    if (it == m_trustedClients.end()) {
+        return false;
+    }
+
+    for (wl_client *c: it->second) {
+        if (c == client) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 void DesktopShell::sendInitEvents()
 {
     for (uint i = 0; i < numWorkspaces(); ++i) {
@@ -695,6 +715,12 @@ void DesktopShell::quit(wl_client *client, wl_resource *resource)
     Shell::quit();
 }
 
+void DesktopShell::addTrustedClient(wl_client *client, wl_resource *resource, int32_t fd, const char *interface)
+{
+    wl_client *c = wl_client_create(compositor()->wl_display, fd);
+    m_trustedClients[interface].push_back(c);
+}
+
 const struct desktop_shell_interface DesktopShell::m_desktop_shell_implementation = {
     wrapInterface(&DesktopShell::setBackground),
     wrapInterface(&DesktopShell::setPanel),
@@ -710,5 +736,6 @@ const struct desktop_shell_interface DesktopShell::m_desktop_shell_implementatio
     wrapInterface(&DesktopShell::createGrab),
     wrapInterface(&DesktopShell::addWorkspace),
     wrapInterface(&DesktopShell::selectWorkspace),
-    wrapInterface(&DesktopShell::quit)
+    wrapInterface(&DesktopShell::quit),
+    wrapInterface(&DesktopShell::addTrustedClient)
 };

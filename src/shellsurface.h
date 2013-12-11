@@ -144,6 +144,7 @@ private:
     void mapPopup();
     void centerOnOutput(struct weston_output *output);
     void sendState();
+    void destroy(void *data);
 
     Shell *m_shell;
     Workspace *m_workspace;

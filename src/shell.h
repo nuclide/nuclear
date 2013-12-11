@@ -152,8 +152,8 @@ protected:
     void quit();
     inline const ShellSurfaceList &surfaces() const { return m_surfaces; }
     virtual void setGrabCursor(Cursor cursor) {}
-    void fadeSplash();
     void addWorkspace(Workspace *ws);
+    void setSplash(weston_view *view);
     virtual void panelConfigure(struct weston_surface *es, int32_t sx, int32_t sy, PanelPosition pos);
 
     virtual void defaultPointerGrabFocus(weston_pointer_grab *grab);
@@ -178,7 +178,7 @@ protected:
     Layer m_overlayLayer;
 
 private:
-    void destroy();
+    void destroy(void *);
     void sigchld(int status);
     void backgroundConfigure(struct weston_surface *es, int32_t sx, int32_t sy);
     void activateSurface(struct weston_seat *seat, uint32_t time, uint32_t button);
@@ -208,7 +208,6 @@ private:
     uint32_t m_enterHotZone;
 
     std::list<weston_view *> m_blackSurfaces;
-    class Splash *m_splash;
     weston_view *m_grabSurface;
 
     static void staticPanelConfigure(weston_surface *es, int32_t sx, int32_t sy);

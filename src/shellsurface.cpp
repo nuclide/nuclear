@@ -45,7 +45,7 @@ ShellSurface::ShellSurface(Shell *shell, struct weston_surface *surface)
     m_fullscreen.blackView = nullptr;
 
     m_surfaceDestroyListener.listen(&surface->destroy_signal);
-    m_surfaceDestroyListener.signal->connect(static_cast<Object *>(this), &Object::destroy);
+    m_surfaceDestroyListener.signal->connect(this, &ShellSurface::destroy);
 }
 
 ShellSurface::~ShellSurface()
@@ -63,6 +63,11 @@ ShellSurface::~ShellSurface()
     }
     m_surface->configure = nullptr;
     destroyedSignal();
+}
+
+void ShellSurface::destroy(void *)
+{
+    Object::destroy();
 }
 
 void ShellSurface::close()

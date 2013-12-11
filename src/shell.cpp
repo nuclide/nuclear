@@ -32,40 +32,6 @@
 #include "animation.h"
 #include "interface.h"
 
-class Splash {
-public:
-    Splash() {}
-    void addOutput(weston_view *s)
-    {
-        Animation *a = new Animation;
-        splash spl{s, a};
-        splashes.push_back(spl);
-        a->updateSignal->connect(&splashes.back(), &splash::setAlpha);
-    }
-    void fadeOut()
-    {
-        for (splash &s: splashes) {
-            s.fadeAnimation->setStart(1.f);
-            s.fadeAnimation->setTarget(0.f);
-            s.fadeAnimation->run(s.view->output, 200);
-        }
-    }
-
-private:
-    struct splash {
-        weston_view *view;
-        Animation *fadeAnimation;
-
-        void setAlpha(float a)
-        {
-            view->alpha = a;
-            weston_view_geometry_dirty(view);
-            weston_surface_damage(view->surface);
-        }
-    };
-    std::list<splash> splashes;
-};
-
 ShellGrab::ShellGrab()
          : m_pointer(nullptr)
 {
@@ -284,7 +250,7 @@ Shell::~Shell()
     }
 }
 
-void Shell::destroy()
+void Shell::destroy(void *)
 {
     delete this;
 }
@@ -304,7 +270,6 @@ void Shell::init()
     m_backgroundLayer.insert(&m_limboLayer);
 
     m_currentWorkspace = 0;
-    m_splash = new Splash;
 
     struct weston_output *out;
     wl_list_for_each(out, &m_compositor->output_list, link) {
@@ -314,10 +279,6 @@ void Shell::init()
         weston_view *blackSurface = createBlackSurface(x, y, w, h);
         m_backgroundLayer.addSurface(blackSurface);
         m_blackSurfaces.push_back(blackSurface);
-
-        weston_view *splashSurface = createBlackSurface(x, y, w, h);
-        m_splashLayer.addSurface(splashSurface);
-        m_splash->addOutput(splashSurface);
     }
 
     struct wl_event_loop *loop = wl_display_get_event_loop(m_compositor->wl_display);
@@ -331,6 +292,13 @@ void Shell::init()
                                             static_cast<Shell *>(data)->selectPreviousWorkspace(); }, this);
     weston_compositor_add_key_binding(compositor(), KEY_RIGHT, MODIFIER_CTRL, [](struct weston_seat *seat, uint32_t time, uint32_t key, void *data) {
                                             static_cast<Shell *>(data)->selectNextWorkspace(); }, this);
+}
+
+void Shell::setSplash(weston_view *view)
+{
+    m_splashLayer.addSurface(view);
+
+    weston_surface_schedule_repaint(view->surface);
 }
 
 void Shell::addWorkspace(Workspace *ws)
@@ -1041,11 +1009,6 @@ void Shell::restoreWindows()
         }
     }
     m_windowsMinimized = false;
-}
-
-void Shell::fadeSplash()
-{
-    m_splash->fadeOut();
 }
 
 void Shell::bindHotSpot(Binding::HotSpot hs, Binding *b)

@@ -28,6 +28,7 @@ class InputPanel;
 class WlShell;
 class XWlShell;
 class DesktopShellWorkspace;
+class Splash;
 
 class DesktopShell : public Shell {
 public:
@@ -45,12 +46,14 @@ private:
     void workspaceAdded(DesktopShellWorkspace *ws);
     void surfaceResponsivenessChanged(ShellSurface *shsurf, bool responsive);
     void bind(struct wl_client *client, uint32_t version, uint32_t id);
+    void bindSplash(wl_client *client, uint32_t version, uint32_t id);
     void unbind(struct wl_resource *resource);
     void moveBinding(struct weston_seat *seat, uint32_t time, uint32_t button);
     void resizeBinding(struct weston_seat *seat, uint32_t time, uint32_t button);
     void setBusyCursor(ShellSurface *shsurf, weston_seat *seat);
     void endBusyCursor(weston_seat *seat);
     bool isTrusted(wl_client *client, const char *interface) const;
+    void trustedClientDestroyed(void *client);
 
     void setBackground(struct wl_client *client, struct wl_resource *resource, struct wl_resource *output_resource,
                                              struct wl_resource *surface_resource);
@@ -67,10 +70,12 @@ private:
     void selectWorkspace(wl_client *client, wl_resource *resource, wl_resource *workspace_resource);
     void quit(wl_client *client, wl_resource *resource);
     void addTrustedClient(wl_client *client, wl_resource *resource, int32_t fd, const char *interface);
+    void setSplashSurface(wl_client *client, wl_resource *resource, wl_resource *output_resource, wl_resource *surface_resource);
 
     static void configurePopup(weston_surface *es, int32_t sx, int32_t sy);
 
     static const struct desktop_shell_interface m_desktop_shell_implementation;
+    static const struct desktop_shell_splash_interface s_desktop_shell_splash_implementation;
 
     struct Output {
         weston_output *output;
@@ -80,6 +85,8 @@ private:
     std::list<Output> m_outputs;
     InputPanel *m_inputPanel;
     std::unordered_map<std::string, std::list<wl_client *>> m_trustedClients;
+    Splash *m_splash;
+    WlListener m_clientDestroyListener;
 };
 
 #endif

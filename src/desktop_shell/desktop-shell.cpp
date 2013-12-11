@@ -44,6 +44,63 @@
 #include "xwlshell.h"
 #include "desktopshellwindow.h"
 #include "desktopshellworkspace.h"
+#include "animation.h"
+
+class Splash {
+public:
+    Splash() {}
+    void addOutput(weston_view *s, wl_resource *res)
+    {
+        splashes.push_back(new splash(this, s, res));
+    }
+    void fadeOut()
+    {
+        for (splash *s: splashes) {
+            s->fadeAnimation->setStart(1.f);
+            s->fadeAnimation->setTarget(0.f);
+            s->fadeAnimation->run(s->view->output, 200, Animation::Flags::SendDone);
+        }
+    }
+
+private:
+    struct splash {
+        weston_view *view;
+        Animation *fadeAnimation;
+        wl_resource *resource;
+        WlListener surfaceListener;
+        Splash *parent;
+
+        splash(Splash *p, weston_view *v, wl_resource *r) {
+            parent = p;
+            view = v;
+            resource = r;
+            fadeAnimation = new Animation;
+
+            fadeAnimation->updateSignal->connect(this, &splash::setAlpha);
+            fadeAnimation->doneSignal->connect(this, &splash::done);
+            surfaceListener.listen(&v->surface->destroy_signal);
+            surfaceListener.signal->connect(this, &splash::surfaceDestroyed);
+        }
+
+        void setAlpha(float a)
+        {
+            view->alpha = a;
+            weston_view_geometry_dirty(view);
+            weston_surface_damage(view->surface);
+        }
+        void done()
+        {
+            desktop_shell_splash_send_done(resource);
+        }
+        void surfaceDestroyed(void *data)
+        {
+            delete fadeAnimation;
+            parent->splashes.remove(this);
+            delete this;
+        }
+    };
+    std::list<splash *> splashes;
+};
 
 DesktopShell::DesktopShell(struct weston_compositor *ec)
             : Shell(ec)
@@ -52,6 +109,7 @@ DesktopShell::DesktopShell(struct weston_compositor *ec)
 
 DesktopShell::~DesktopShell()
 {
+    delete m_splash;
 }
 
 void DesktopShell::init()
@@ -72,6 +130,10 @@ void DesktopShell::init()
                                              static_cast<DesktopShell *>(data)->resizeBinding(seat, time, button);
                                          }, this);
 
+    if (!wl_global_create(compositor()->wl_display, &desktop_shell_splash_interface, 1, this,
+        [](wl_client *client, void *data, uint32_t version, uint32_t id) { static_cast<DesktopShell *>(data)->bindSplash(client, version, id); }))
+        return;
+
     WlShell *wls = new WlShell;
     wls->surfaceResponsivenessChangedSignal.connect(this, &DesktopShell::surfaceResponsivenessChanged);
     addInterface(wls);
@@ -90,6 +152,9 @@ void DesktopShell::init()
     new MinimizeEffect(this);
 
     m_inputPanel = new InputPanel(compositor()->wl_display);
+    m_splash = new Splash;
+
+    m_clientDestroyListener.signal->connect(this, &DesktopShell::trustedClientDestroyed);
 }
 
 void DesktopShell::setGrabCursor(Cursor cursor)
@@ -169,6 +234,14 @@ bool DesktopShell::isTrusted(wl_client *client, const char *interface) const
     return false;
 }
 
+void DesktopShell::trustedClientDestroyed(void *data)
+{
+    wl_client *client = static_cast<wl_client *>(data);
+    for (auto v: m_trustedClients) {
+        v.second.remove(client);
+    }
+}
+
 void DesktopShell::sendInitEvents()
 {
     for (uint i = 0; i < numWorkspaces(); ++i) {
@@ -230,6 +303,19 @@ void DesktopShell::bind(struct wl_client *client, uint32_t version, uint32_t id)
     }
 
     wl_resource_post_error(resource, WL_DISPLAY_ERROR_INVALID_OBJECT, "permission to bind desktop_shell denied");
+    wl_resource_destroy(resource);
+}
+
+void DesktopShell::bindSplash(wl_client *client, uint32_t version, uint32_t id)
+{
+    wl_resource *resource = wl_resource_create(client, &desktop_shell_splash_interface, version, id);
+
+    if (isTrusted(client, "desktop_shell_splash")) {
+        wl_resource_set_implementation(resource, &s_desktop_shell_splash_implementation, this, nullptr);
+        return;
+    }
+
+    wl_resource_post_error(resource, WL_DISPLAY_ERROR_INVALID_OBJECT, "permission to bind desktop_shell_splash denied");
     wl_resource_destroy(resource);
 }
 
@@ -626,7 +712,7 @@ void DesktopShell::setGrabSurface(struct wl_client *client, struct wl_resource *
 
 void DesktopShell::desktopReady(struct wl_client *client, struct wl_resource *resource)
 {
-    fadeSplash();
+    m_splash->fadeOut();
 }
 
 void DesktopShell::addKeyBinding(struct wl_client *client, struct wl_resource *resource, uint32_t id, uint32_t key, uint32_t modifiers)
@@ -764,6 +850,7 @@ void DesktopShell::quit(wl_client *client, wl_resource *resource)
 void DesktopShell::addTrustedClient(wl_client *client, wl_resource *resource, int32_t fd, const char *interface)
 {
     wl_client *c = wl_client_create(compositor()->wl_display, fd);
+    wl_client_add_destroy_listener(c, m_clientDestroyListener.listener());
     m_trustedClients[interface].push_back(c);
 }
 
@@ -784,6 +871,32 @@ const struct desktop_shell_interface DesktopShell::m_desktop_shell_implementatio
     wrapInterface(&DesktopShell::selectWorkspace),
     wrapInterface(&DesktopShell::quit),
     wrapInterface(&DesktopShell::addTrustedClient)
+};
+
+void DesktopShell::setSplashSurface(wl_client *client, wl_resource *resource, wl_resource *output_resource, wl_resource *surface_resource)
+{
+    weston_surface *surf = static_cast<weston_surface *>(wl_resource_get_user_data(surface_resource));
+    weston_output *out = static_cast<weston_output *>(wl_resource_get_user_data(output_resource));
+
+    int x = out->x, y = out->y;
+    surf->output = out;
+
+    surf->configure = [](weston_surface *es, int32_t x, int32_t y) {
+        // FIXME: Remove these once they're not needed anymore!!
+        if (es->output) {
+            weston_output_schedule_repaint(es->output);
+        }
+    };
+
+    weston_view *view = weston_view_create(surf);
+    weston_view_set_position(view, x, y);
+    setSplash(view);
+    view->output = out;
+    m_splash->addOutput(view, resource);
+}
+
+const struct desktop_shell_splash_interface DesktopShell::s_desktop_shell_splash_implementation = {
+    wrapInterface(&DesktopShell::setSplashSurface)
 };
 
 

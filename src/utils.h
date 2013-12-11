@@ -50,19 +50,23 @@ typedef Rect2D<int> IRect2D;
 
 class WlListener {
 public:
-    WlListener() { m_listener.parent = this; signal = new Signal<>; }
+    WlListener() {
+        signal = new Signal<void *>;
+        m_listener.parent = this;
+        m_listener.listener.notify = notify;
+    }
     ~WlListener() { signal->flush(); wl_list_remove(&m_listener.listener.link); }
 
+    wl_listener *listener() { return &m_listener.listener; }
     void listen(struct wl_signal *signal) {
-        m_listener.listener.notify = notify;
         wl_signal_add(signal, &m_listener.listener);
     }
 
-    Signal<> *signal;
+    Signal<void *> *signal;
 private:
     static void notify(wl_listener *listener, void *data) {
         WlListener *_this = static_cast<Wrapper *>(container_of(listener, Wrapper, listener))->parent;
-        (*_this->signal)();
+        (*_this->signal)(data);
     }
 
     struct Wrapper {

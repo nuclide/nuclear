@@ -61,6 +61,10 @@ public:
     void listen(struct wl_signal *signal) {
         wl_signal_add(signal, &m_listener.listener);
     }
+    void reset() {
+        wl_list_remove(&m_listener.listener.link);
+        wl_list_init(&m_listener.listener.link);
+    }
 
     Signal<void *> *signal;
 private:

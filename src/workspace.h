@@ -62,6 +62,8 @@ public:
     Signal<Workspace *> destroyedSignal;
 
 private:
+    void backgroundDestroyed(void *d);
+
     Shell *m_shell;
     int m_number;
     weston_view *m_rootSurface;
@@ -70,6 +72,7 @@ private:
     Layer m_backgroundLayer;
     Layer m_layer;
     bool m_active;
+    WlListener m_backgroundDestroy;
 };
 
 #endif

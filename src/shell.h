@@ -189,6 +189,7 @@ private:
     void activateWorkspace(Workspace *old);
     weston_view *createBlackSurface(int x, int y, int w, int h);
     void workspaceRemoved(Workspace *ws);
+    void grabViewDestroyed(void *d);
 
     struct weston_compositor *m_compositor;
     WlListener m_destroyListener;
@@ -208,7 +209,8 @@ private:
     uint32_t m_enterHotZone;
 
     std::list<weston_view *> m_blackSurfaces;
-    weston_view *m_grabSurface;
+    weston_view *m_grabView;
+    WlListener m_grabViewDestroy;
 
     static void staticPanelConfigure(weston_surface *es, int32_t sx, int32_t sy);
 

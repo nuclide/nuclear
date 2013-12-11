@@ -43,6 +43,8 @@ Workspace::Workspace(Shell *shell, int number)
     pixman_region32_init_rect(&s->input, 0, 0, w, h);
 
     m_layer.addSurface(m_rootSurface);
+
+    m_backgroundDestroy.signal->connect(this, &Workspace::backgroundDestroyed);
 }
 
 Workspace::~Workspace()
@@ -65,14 +67,23 @@ Workspace::~Workspace()
 
 void Workspace::createBackgroundView(weston_surface *bkg)
 {
-    if (m_background) {
+    if (m_background && m_background->surface != bkg) {
         weston_view_destroy(m_background);
     }
 
     m_background = weston_view_create(bkg);
+    m_backgroundDestroy.listen(&m_background->destroy_signal);
     weston_view_set_position(m_background, 0, 0);
     m_backgroundLayer.addSurface(m_background);
     weston_view_set_transform_parent(m_background, m_rootSurface);
+}
+
+void Workspace::backgroundDestroyed(void *d)
+{
+    if (d == m_background) {
+        m_background = nullptr;
+        m_backgroundDestroy.reset();
+    }
 }
 
 void Workspace::addSurface(ShellSurface *surface)

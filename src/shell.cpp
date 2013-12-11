@@ -84,7 +84,7 @@ ShellGrab *ShellGrab::fromGrab(weston_pointer_grab *grab)
 void ShellGrab::setCursor(Cursor cursor)
 {
     Shell::instance()->setGrabCursor(cursor);
-    weston_pointer_set_focus(pointer(), Shell::instance()->m_grabSurface, wl_fixed_from_int(0), wl_fixed_from_int(0));
+    weston_pointer_set_focus(pointer(), Shell::instance()->m_grabView, wl_fixed_from_int(0), wl_fixed_from_int(0));
 }
 
 void ShellGrab::unsetCursor()
@@ -233,7 +233,7 @@ Shell::Shell(struct weston_compositor *ec)
             , m_background(nullptr)
             , m_lastMotionTime(0)
             , m_enterHotZone(0)
-            , m_grabSurface(nullptr)
+            , m_grabView(nullptr)
 {
     s_instance = this;
 
@@ -261,6 +261,7 @@ void Shell::init()
 
     m_destroyListener.listen(&m_compositor->destroy_signal);
     m_destroyListener.signal->connect(this, &Shell::destroy);
+    m_grabViewDestroy.signal->connect(this, &Shell::grabViewDestroyed);
 
     m_splashLayer.insert(&m_compositor->cursor_layer);
     m_overlayLayer.insert(&m_splashLayer);
@@ -766,15 +767,24 @@ void Shell::setBackgroundSurface(struct weston_surface *surface, struct weston_o
 
 void Shell::setGrabSurface(struct weston_surface *surface)
 {
-    if (m_grabSurface) {
-        if (surface == m_grabSurface->surface) {
+    if (m_grabView) {
+        if (surface == m_grabView->surface) {
             return;
         }
 
-        weston_view_destroy(m_grabSurface);
+        weston_view_destroy(m_grabView);
     }
 
-    m_grabSurface = weston_view_create(surface);
+    m_grabView = weston_view_create(surface);
+    m_grabViewDestroy.listen(&m_grabView->destroy_signal);
+}
+
+void Shell::grabViewDestroyed(void *d)
+{
+    if (d == m_grabView) {
+        m_grabView = nullptr;
+        m_grabViewDestroy.reset();
+    }
 }
 
 struct Panel {

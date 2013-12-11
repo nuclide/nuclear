@@ -7,7 +7,7 @@ itself, and serves no purpose without one.
 
 ## Dependencies
 
-Nuclear depends only on Weston 1.3 aside the toolchain to build it, that is a C++11 compiler 
+Nuclear depends only on Weston master aside the toolchain to build it, that is a C++11 compiler 
 and CMake.
 
 ## Building

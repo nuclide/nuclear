@@ -137,6 +137,8 @@ public:
     Signal<> typeChangedSignal;
     Signal<> titleChangedSignal;
     Signal<> activeChangedSignal;
+    Signal<> mappedSignal;
+    Signal<> unmappedSignal;
 
 private:
     void unsetFullscreen();

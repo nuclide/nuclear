@@ -45,6 +45,7 @@
 #include "desktopshellwindow.h"
 #include "desktopshellworkspace.h"
 #include "animation.h"
+#include "screenshooter.h"
 
 class Splash {
 public:
@@ -152,6 +153,7 @@ void DesktopShell::init()
     wls->surfaceResponsivenessChangedSignal.connect(this, &DesktopShell::surfaceResponsivenessChanged);
     addInterface(wls);
     addInterface(new XWlShell);
+    addInterface(new Screenshooter);
 
     Effect *e = new ScaleEffect(this);
     e->binding("Toggle")->bindKey(KEY_E, MODIFIER_CTRL);

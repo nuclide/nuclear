@@ -218,6 +218,8 @@ void ShellSurface::map(int32_t x, int32_t y)
             m_view->output = m_output;
         }
     }
+
+    mappedSignal();
 }
 
 void ShellSurface::unmapped()
@@ -226,6 +228,7 @@ void ShellSurface::unmapped()
         m_popup.seat->removePopupGrab(this);
         m_popup.seat = nullptr;
     }
+    unmappedSignal();
 }
 
 void ShellSurface::setTopLevel()

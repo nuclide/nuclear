@@ -25,7 +25,6 @@ set(SOURCES
     inputpanel.cpp
     binding.cpp
     interface.cpp
-    screenshooter.cpp
     xwlshell.cpp
     wl_shell/wlshell.cpp
     wl_shell/wlshellsurface.cpp
@@ -44,11 +43,6 @@ wayland_add_protocol_server(SOURCES
 wayland_add_protocol_server(SOURCES
     ${CMAKE_SOURCE_DIR}/protocol/input-method.xml
     input-method
-)
-
-wayland_add_protocol_server(SOURCES
-    ${CMAKE_SOURCE_DIR}/protocol/screenshooter.xml
-    screenshooter
 )
 
 add_library(nuclear-shell-common SHARED ${SOURCES})

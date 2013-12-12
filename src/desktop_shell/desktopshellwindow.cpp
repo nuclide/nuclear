@@ -38,25 +38,11 @@ void DesktopShellWindow::added()
     shsurf()->typeChangedSignal.connect(this, &DesktopShellWindow::surfaceTypeChanged);
     shsurf()->titleChangedSignal.connect(this, &DesktopShellWindow::sendTitle);
     shsurf()->activeChangedSignal.connect(this, &DesktopShellWindow::activeChanged);
-    shsurf()->mappedSignal.connect(this, &DesktopShellWindow::mapped);
-    shsurf()->unmappedSignal.connect(this, &DesktopShellWindow::destroy);
 }
 
 ShellSurface *DesktopShellWindow::shsurf()
 {
     return static_cast<ShellSurface *>(object());
-}
-
-void DesktopShellWindow::mapped()
-{
-    if (m_resource) {
-        return;
-    }
-
-    ShellSurface::Type type = shsurf()->type();
-    if (type == ShellSurface::Type::TopLevel || type == ShellSurface::Type::Maximized || type == ShellSurface::Type::Fullscreen) {
-        create();
-    }
 }
 
 void DesktopShellWindow::surfaceTypeChanged()

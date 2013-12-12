@@ -147,6 +147,8 @@ private:
     void centerOnOutput(struct weston_output *output);
     void sendState();
     void destroy(void *data);
+    void savePos();
+    void restorePos();
 
     Shell *m_shell;
     Workspace *m_workspace;
@@ -160,6 +162,7 @@ private:
     std::string m_class;
     struct weston_output *m_output;
     int32_t m_savedX, m_savedY;
+    bool m_savedPos;
     bool m_acceptState;
     ShellGrab *m_runningGrab;
     int32_t m_lastWidth, m_lastHeight;

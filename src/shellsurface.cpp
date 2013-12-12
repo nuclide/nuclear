@@ -34,6 +34,7 @@ ShellSurface::ShellSurface(Shell *shell, struct weston_surface *surface)
             , m_view(weston_view_create(surface))
             , m_type(Type::None)
             , m_pendingType(Type::None)
+            , m_savedPos(false)
             , m_acceptState(true)
             , m_runningGrab(nullptr)
             , m_active(false)
@@ -170,8 +171,7 @@ bool ShellSurface::updateType()
         switch (m_type) {
             case Type::Maximized:
             case Type::Fullscreen:
-                m_savedX = x();
-                m_savedY = y();
+                savePos();
                 break;
             case Type::Transient: {
                 weston_view *pv = Shell::defaultView(m_parent);
@@ -207,7 +207,11 @@ void ShellSurface::map(int32_t x, int32_t y)
         }
         case Type::TopLevel:
         case Type::None:
-            weston_view_set_position(m_view, x, y);
+            if (m_savedPos) {
+                restorePos();
+            } else {
+                weston_view_set_position(m_view, x, y);
+            }
         default:
             break;
     }
@@ -228,7 +232,23 @@ void ShellSurface::unmapped()
         m_popup.seat->removePopupGrab(this);
         m_popup.seat = nullptr;
     }
+    savePos();
     unmappedSignal();
+}
+
+void ShellSurface::savePos()
+{
+    m_savedX = x();
+    m_savedY = y();
+    m_savedPos = true;
+}
+
+void ShellSurface::restorePos()
+{
+    if (m_savedPos) {
+        weston_view_set_position(m_view, m_savedX, m_savedY);
+        m_savedPos = false;
+    }
 }
 
 void ShellSurface::setTopLevel()
@@ -429,12 +449,12 @@ void ShellSurface::unsetFullscreen()
     }
     m_fullscreen.blackView = nullptr;
     m_fullscreen.output = nullptr;
-    weston_view_set_position(m_view, m_savedX, m_savedY);
+    restorePos();
 }
 
 void ShellSurface::unsetMaximized()
 {
-    weston_view_set_position(m_view, m_savedX, m_savedY);
+    restorePos();
 }
 
 void ShellSurface::centerOnOutput(struct weston_output *output)

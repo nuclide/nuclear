@@ -39,6 +39,7 @@ private:
     ShellSurface *shsurf();
     void surfaceTypeChanged();
     void activeChanged();
+    void mapped();
     void destroy();
     void sendState();
     void sendTitle();

@@ -102,6 +102,15 @@ private:
     std::list<splash *> splashes;
 };
 
+struct Client {
+    ~Client() {
+        destroyListener.reset();
+    }
+
+    wl_client *client;
+    WlListener destroyListener;
+};
+
 DesktopShell::DesktopShell(struct weston_compositor *ec)
             : Shell(ec)
 {
@@ -110,6 +119,11 @@ DesktopShell::DesktopShell(struct weston_compositor *ec)
 DesktopShell::~DesktopShell()
 {
     delete m_splash;
+    for (auto value: m_trustedClients) {
+        for (Client *c: value.second) {
+            delete c;
+        }
+    }
 }
 
 void DesktopShell::init()
@@ -153,8 +167,6 @@ void DesktopShell::init()
 
     m_inputPanel = new InputPanel(compositor()->wl_display);
     m_splash = new Splash;
-
-    m_clientDestroyListener.signal->connect(this, &DesktopShell::trustedClientDestroyed);
 }
 
 void DesktopShell::setGrabCursor(Cursor cursor)
@@ -225,8 +237,8 @@ bool DesktopShell::isTrusted(wl_client *client, const char *interface) const
         return false;
     }
 
-    for (wl_client *c: it->second) {
-        if (c == client) {
+    for (Client *c: it->second) {
+        if (c->client == client) {
             return true;
         }
     }
@@ -238,7 +250,14 @@ void DesktopShell::trustedClientDestroyed(void *data)
 {
     wl_client *client = static_cast<wl_client *>(data);
     for (auto v: m_trustedClients) {
-        v.second.remove(client);
+        std::list<Client *> &list = m_trustedClients[v.first];
+        for (auto i = list.begin(); i != list.end(); ++i) {
+            if ((*i)->client == client) {
+                delete *i;
+                list.erase(i);
+                return;
+            }
+        }
     }
 }
 
@@ -850,8 +869,13 @@ void DesktopShell::quit(wl_client *client, wl_resource *resource)
 void DesktopShell::addTrustedClient(wl_client *client, wl_resource *resource, int32_t fd, const char *interface)
 {
     wl_client *c = wl_client_create(compositor()->wl_display, fd);
-    wl_client_add_destroy_listener(c, m_clientDestroyListener.listener());
-    m_trustedClients[interface].push_back(c);
+
+    Client *cl = new Client;
+    cl->client = c;
+    cl->destroyListener.signal->connect(this, &DesktopShell::trustedClientDestroyed);
+    wl_client_add_destroy_listener(c, cl->destroyListener.listener());
+
+    m_trustedClients[interface].push_back(cl);
 }
 
 const struct desktop_shell_interface DesktopShell::m_desktop_shell_implementation = {

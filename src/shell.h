@@ -146,6 +146,8 @@ public:
 
     void putInLimbo(ShellSurface *s);
 
+    virtual bool isTrusted(wl_client *client, const char *interface) const;
+
 protected:
     Shell(struct weston_compositor *ec);
     virtual void init();

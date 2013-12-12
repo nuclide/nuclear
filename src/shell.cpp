@@ -1038,6 +1038,11 @@ void Shell::putInLimbo(ShellSurface *s)
     m_limboLayer.addSurface(s);
 }
 
+bool Shell::isTrusted(wl_client *client, const char *interface) const
+{
+    return client == m_child.client;
+}
+
 void Shell::sigchld(int status)
 {
     uint32_t time;

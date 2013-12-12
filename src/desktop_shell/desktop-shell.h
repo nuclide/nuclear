@@ -29,11 +29,14 @@ class WlShell;
 class XWlShell;
 class DesktopShellWorkspace;
 class Splash;
+class Client;
 
 class DesktopShell : public Shell {
 public:
     DesktopShell(struct weston_compositor *ec);
     ~DesktopShell();
+
+    bool isTrusted(wl_client *client, const char *interface) const override;
 
 protected:
     virtual void init();
@@ -52,7 +55,6 @@ private:
     void resizeBinding(struct weston_seat *seat, uint32_t time, uint32_t button);
     void setBusyCursor(ShellSurface *shsurf, weston_seat *seat);
     void endBusyCursor(weston_seat *seat);
-    bool isTrusted(wl_client *client, const char *interface) const;
     void trustedClientDestroyed(void *client);
 
     void setBackground(struct wl_client *client, struct wl_resource *resource, struct wl_resource *output_resource,
@@ -84,9 +86,8 @@ private:
     };
     std::list<Output> m_outputs;
     InputPanel *m_inputPanel;
-    std::unordered_map<std::string, std::list<wl_client *>> m_trustedClients;
+    std::unordered_map<std::string, std::list<Client *>> m_trustedClients;
     Splash *m_splash;
-    WlListener m_clientDestroyListener;
 };
 
 #endif

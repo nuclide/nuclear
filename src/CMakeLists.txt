@@ -28,6 +28,7 @@ set(SOURCES
     settingsinterface.cpp
     interface.cpp
     sessionmanager.cpp
+    screenshooter.cpp
     xwlshell.cpp
     wl_shell/wlshell.cpp
     wl_shell/wlshellsurface.cpp
@@ -59,6 +60,7 @@ wayland_add_protocol_server(SOURCES
     dropdown
 )
 wayland_add_protocol_server(SOURCES ${CMAKE_SOURCE_DIR}/protocol/xdg-shell.xml xdg-shell)
+wayland_add_protocol_server(SOURCES ${CMAKE_SOURCE_DIR}/protocol/screenshooter.xml screenshooter)
 
 add_library(nuclear-shell-common SHARED ${SOURCES})
 set_target_properties(nuclear-shell-common PROPERTIES COMPILE_DEFINITIONS WL_HIDE_DEPRECATED=1)

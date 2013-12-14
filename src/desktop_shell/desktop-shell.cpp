@@ -45,6 +45,7 @@
 #include "settingsinterface.h"
 #include "sessionmanager.h"
 #include "dropdown.h"
+#include "screenshooter.h"
 
 class Splash {
 public:
@@ -192,6 +193,7 @@ void DesktopShell::init()
     XdgShell *xdg = new XdgShell;
     xdg->surfaceResponsivenessChangedSignal.connect(this, &DesktopShell::surfaceResponsivenessChanged);
     addInterface(xdg);
+    addInterface(new Screenshooter);
 
     m_inputPanel = new InputPanel(compositor()->wl_display);
     m_splash = new Splash;

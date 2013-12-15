@@ -30,7 +30,21 @@ class Binding;
 class ScaleEffect : public Effect
 {
 public:
-    ScaleEffect(Shell *shell);
+    class Settings : public Effect::Settings
+    {
+    public:
+        Settings();
+        ~Settings();
+
+        virtual std::list<Option> options() const override;
+        virtual void set(const std::string &name, int v) override;
+        virtual void set(const std::string &name, const Option::BindingValue &v) override;
+
+    private:
+        ScaleEffect *m_effect;
+    };
+
+    ScaleEffect();
     ~ScaleEffect();
 
 protected:

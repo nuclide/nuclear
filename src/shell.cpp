@@ -31,6 +31,7 @@
 #include "effect.h"
 #include "animation.h"
 #include "interface.h"
+#include "settings.h"
 
 ShellGrab::ShellGrab()
          : m_pointer(nullptr)
@@ -240,10 +241,13 @@ Shell::Shell(struct weston_compositor *ec)
     srandom(weston_compositor_get_time());
     m_child.shell = this;
     m_child.deathstamp = 0;
+
+    SettingsManager::init();
 }
 
 Shell::~Shell()
 {
+    SettingsManager::cleanup();
     free(m_clientPath);
     if (m_child.client) {
         kill(m_child.process.pid, SIGKILL);

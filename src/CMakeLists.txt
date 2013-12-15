@@ -24,6 +24,7 @@ set(SOURCES
     animation.cpp
     inputpanel.cpp
     binding.cpp
+    settings.cpp
     interface.cpp
     xwlshell.cpp
     wl_shell/wlshell.cpp

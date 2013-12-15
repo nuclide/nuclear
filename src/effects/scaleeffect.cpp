@@ -88,13 +88,13 @@ struct Grab : public ShellGrab {
     weston_view *surface;
 };
 
-ScaleEffect::ScaleEffect(Shell *shell)
-           : Effect(shell)
+ScaleEffect::ScaleEffect()
+           : Effect()
            , m_scaled(false)
            , m_grab(new Grab)
 {
     m_grab->effect = this;
-    Binding *b = new Binding(Binding::Type::Key | Binding::Type::HotSpot);
+    Binding *b = new Binding();
     b->setIsToggle(true);
     b->keyTriggered.connect(this, &ScaleEffect::run);
     b->hotSpotTriggered.connect(this, &ScaleEffect::run);
@@ -118,12 +118,12 @@ void ScaleEffect::run(weston_seat *seat, uint32_t time, Binding::HotSpot hs)
 void ScaleEffect::run(struct weston_seat *ws)
 {
     int num = m_surfaces.size();
-    if ((num == 0 && !m_scaled) || shell()->isInFullscreen()) {
+    if ((num == 0 && !m_scaled) || Shell::instance()->isInFullscreen()) {
         return;
     }
 
     num = 0;
-    Workspace *currWs = shell()->currentWorkspace();
+    Workspace *currWs = Shell::instance()->currentWorkspace();
     for (SurfaceTransform *surf: m_surfaces) {
         if (surf->surface->workspace() == currWs) {
             ++num;
@@ -215,7 +215,7 @@ void ScaleEffect::run(struct weston_seat *ws)
         m_chosenSurface = nullptr;
         m_grab->surface = nullptr;
         m_grab->start(ws, Cursor::Arrow);
-        shell()->hidePanels();
+        Shell::instance()->hidePanels();
         if (ws->pointer->focus) {
             ShellSurface *s = Shell::getShellSurface(ws->pointer->focus->surface);
             if (!s) {
@@ -234,7 +234,7 @@ void ScaleEffect::run(struct weston_seat *ws)
     } else {
         m_seat = nullptr;
         m_grab->end();
-        shell()->showPanels();
+        Shell::instance()->showPanels();
     }
 }
 
@@ -310,3 +310,46 @@ void SurfaceTransform::doneAnimation()
         surface->setAlpha(1);
     }
 }
+
+
+ScaleEffect::Settings::Settings()
+           : Effect::Settings()
+           , m_effect(nullptr)
+{
+}
+
+ScaleEffect::Settings::~Settings()
+{
+    delete m_effect;
+}
+
+std::list<Option> ScaleEffect::Settings::options() const
+{
+    auto list = Effect::Settings::options();
+    list.push_back(Option("toggle_binding", Binding::Type::Key | Binding::Type::HotSpot, Option::BindingValue::key(KEY_E, MODIFIER_CTRL)));
+
+    return list;
+}
+
+void ScaleEffect::Settings::set(const std::string &name, int v)
+{
+    if (name == "enabled") {
+        if (v && !m_effect) {
+            m_effect = new ScaleEffect;
+            const Option *o = option("toggle_binding");
+            o->valueAsBinding().bind(m_effect->binding("Toggle"));
+        } else if (!v) {
+            delete m_effect;
+            m_effect = nullptr;
+        }
+    }
+}
+
+void ScaleEffect::Settings::set(const std::string &name, const Option::BindingValue &v)
+{
+    if (name == "toggle_binding" && m_effect) {
+        v.bind(m_effect->binding("Toggle"));
+    }
+}
+
+SETTINGS(scale_effect, ScaleEffect::Settings)

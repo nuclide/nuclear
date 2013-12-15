@@ -51,8 +51,8 @@ struct InOutSurfaceEffect::Surface {
     }
 };
 
-InOutSurfaceEffect::InOutSurfaceEffect(Shell *shell)
-                  : Effect(shell)
+InOutSurfaceEffect::InOutSurfaceEffect()
+                  : Effect()
 {
 }
 
@@ -84,3 +84,30 @@ void InOutSurfaceEffect::addedSurface(ShellSurface *surface)
     surf->animation.setTarget(1);
     surf->animation.run(surface->output(), ALPHA_ANIM_DURATION);
 }
+
+
+
+InOutSurfaceEffect::Settings::Settings()
+           : Effect::Settings()
+           , m_effect(nullptr)
+{
+}
+
+InOutSurfaceEffect::Settings::~Settings()
+{
+    delete m_effect;
+}
+
+void InOutSurfaceEffect::Settings::set(const std::string &name, int v)
+{
+    if (name == "enabled") {
+        if (v && !m_effect) {
+            m_effect = new InOutSurfaceEffect;
+        } else if (!v) {
+            delete m_effect;
+            m_effect = nullptr;
+        }
+    }
+}
+
+SETTINGS(inoutsurface_effect, InOutSurfaceEffect::Settings)

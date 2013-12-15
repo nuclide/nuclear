@@ -77,8 +77,8 @@ struct MinimizeEffect::Surface {
     }
 };
 
-MinimizeEffect::MinimizeEffect(Shell *shell)
-              : Effect(shell)
+MinimizeEffect::MinimizeEffect()
+              : Effect()
 {
 }
 
@@ -118,3 +118,30 @@ void MinimizeEffect::removedSurface(ShellSurface *surface)
         }
     }
 }
+
+
+
+MinimizeEffect::Settings::Settings()
+           : Effect::Settings()
+           , m_effect(nullptr)
+{
+}
+
+MinimizeEffect::Settings::~Settings()
+{
+    delete m_effect;
+}
+
+void MinimizeEffect::Settings::set(const std::string &name, int v)
+{
+    if (name == "enabled") {
+        if (v && !m_effect) {
+            m_effect = new MinimizeEffect;
+        } else if (!v) {
+            delete m_effect;
+            m_effect = nullptr;
+        }
+    }
+}
+
+SETTINGS(minimize_effect, MinimizeEffect::Settings)

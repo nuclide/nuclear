@@ -132,13 +132,13 @@ struct DGrab : public ShellGrab {
     float scale;
 };
 
-GridDesktops::GridDesktops(Shell *shell)
-           : Effect(shell)
+GridDesktops::GridDesktops()
+           : Effect()
            , m_scaled(false)
            , m_grab(new DGrab)
 {
     m_grab->effect = this;
-    Binding *b = new Binding(Binding::Type::Key | Binding::Type::HotSpot);
+    Binding *b = new Binding();
     b->setIsToggle(true);
     b->keyTriggered.connect(this, &GridDesktops::run);
     b->hotSpotTriggered.connect(this, &GridDesktops::run);
@@ -161,33 +161,34 @@ void GridDesktops::run(weston_seat *seat, uint32_t time, Binding::HotSpot hs)
 
 void GridDesktops::run(struct weston_seat *ws)
 {
-    if (shell()->isInFullscreen()) {
+    Shell *shell = Shell::instance();
+    if (shell->isInFullscreen()) {
         return;
     }
 
-    int numWs = shell()->numWorkspaces();
+    int numWs = shell->numWorkspaces();
     int numWsCols = ceil(sqrt(numWs));
     int numWsRows = ceil((float)numWs / (float)numWsCols);
 
     if (m_scaled) {
-        shell()->showPanels();
-        shell()->resetWorkspaces();
+        shell->showPanels();
+        shell->resetWorkspaces();
         m_grab->end();
-        shell()->selectWorkspace(m_setWs);
+        shell->selectWorkspace(m_setWs);
         for (int i = 0; i < numWs; ++i) {
-            Workspace *w = shell()->workspace(i);
+            Workspace *w = shell->workspace(i);
 
             Transform tr;
             w->setTransform(tr);
         }
     } else {
-        shell()->showAllWorkspaces();
-        shell()->hidePanels();
+        shell->showAllWorkspaces();
+        shell->hidePanels();
         m_grab->surface = nullptr;
         m_grab->start(ws, Cursor::Arrow);
-        m_setWs = shell()->currentWorkspace()->number();
+        m_setWs = shell->currentWorkspace()->number();
 
-        weston_output *out = shell()->currentWorkspace()->output();
+        weston_output *out = shell->currentWorkspace()->output();
         const int margin_w = out->width / 70;
         const int margin_h = out->height / 70;
 
@@ -201,7 +202,7 @@ void GridDesktops::run(struct weston_seat *ws)
         m_grab->scale = rx;
 
         for (int i = 0; i < numWs; ++i) {
-            Workspace *w = shell()->workspace(i);
+            Workspace *w = shell->workspace(i);
 
             int cws = i % numWsCols;
             int rws = i / numWsCols;
@@ -217,3 +218,46 @@ void GridDesktops::run(struct weston_seat *ws)
     }
     m_scaled = !m_scaled;
 }
+
+
+GridDesktops::Settings::Settings()
+           : Effect::Settings()
+           , m_effect(nullptr)
+{
+}
+
+GridDesktops::Settings::~Settings()
+{
+    delete m_effect;
+}
+
+std::list<Option> GridDesktops::Settings::options() const
+{
+    auto list = Effect::Settings::options();
+    list.push_back(Option("toggle_binding", Binding::Type::Key | Binding::Type::HotSpot, Option::BindingValue::key(KEY_G, MODIFIER_CTRL)));
+
+    return list;
+}
+
+void GridDesktops::Settings::set(const std::string &name, int v)
+{
+    if (name == "enabled") {
+        if (v && !m_effect) {
+            m_effect = new GridDesktops;
+            const Option *o = option("toggle_binding");
+            o->valueAsBinding().bind(m_effect->binding("Toggle"));
+        } else if (!v) {
+            delete m_effect;
+            m_effect = nullptr;
+        }
+    }
+}
+
+void GridDesktops::Settings::set(const std::string &name, const Option::BindingValue &v)
+{
+    if (name == "toggle_binding" && m_effect) {
+        v.bind(m_effect->binding("Toggle"));
+    }
+}
+
+SETTINGS(griddesktops_effect, GridDesktops::Settings)

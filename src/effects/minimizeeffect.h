@@ -25,7 +25,19 @@
 class MinimizeEffect : public Effect
 {
 public:
-    MinimizeEffect(Shell *shell);
+    class Settings : public Effect::Settings
+    {
+    public:
+        Settings();
+        ~Settings();
+
+        virtual void set(const std::string &name, int v) override;
+
+    private:
+        MinimizeEffect *m_effect;
+    };
+
+    MinimizeEffect();
     ~MinimizeEffect();
 
 protected:

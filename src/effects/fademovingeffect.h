@@ -27,7 +27,20 @@ class Animation;
 class FadeMovingEffect : public Effect
 {
 public:
-    FadeMovingEffect(Shell *shell);
+    class Settings : public Effect::Settings
+    {
+    public:
+        Settings();
+        ~Settings();
+
+        virtual void set(const std::string &name, int v) override;
+
+    private:
+        FadeMovingEffect *m_effect;
+    };
+
+
+    FadeMovingEffect();
     ~FadeMovingEffect();
 
     void start(ShellSurface *surface);

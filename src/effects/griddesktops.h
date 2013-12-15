@@ -30,7 +30,21 @@ class Binding;
 class GridDesktops : public Effect
 {
 public:
-    GridDesktops(Shell *shell);
+    class Settings : public Effect::Settings
+    {
+    public:
+        Settings();
+        ~Settings();
+
+        virtual std::list<Option> options() const override;
+        virtual void set(const std::string &name, int v) override;
+        virtual void set(const std::string &name, const Option::BindingValue &v) override;
+
+    private:
+        GridDesktops *m_effect;
+    };
+
+    GridDesktops();
     ~GridDesktops();
 
 private:

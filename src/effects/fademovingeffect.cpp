@@ -26,8 +26,8 @@ struct FadeMovingEffect::Surface {
     Animation animation;
 };
 
-FadeMovingEffect::FadeMovingEffect(Shell *shell)
-                : Effect(shell)
+FadeMovingEffect::FadeMovingEffect()
+                : Effect()
 {
 }
 
@@ -92,3 +92,30 @@ FadeMovingEffect::Surface *FadeMovingEffect::findSurface(ShellSurface *surface)
 
     return nullptr;
 }
+
+
+
+FadeMovingEffect::Settings::Settings()
+           : Effect::Settings()
+           , m_effect(nullptr)
+{
+}
+
+FadeMovingEffect::Settings::~Settings()
+{
+    delete m_effect;
+}
+
+void FadeMovingEffect::Settings::set(const std::string &name, int v)
+{
+    if (name == "enabled") {
+        if (v && !m_effect) {
+            m_effect = new FadeMovingEffect;
+        } else if (!v) {
+            delete m_effect;
+            m_effect = nullptr;
+        }
+    }
+}
+
+SETTINGS(fademoving_effect, FadeMovingEffect::Settings)

@@ -27,9 +27,9 @@ struct weston_seat;
 class Binding {
 public:
     enum class Type {
-        Key = 0,
-        Axis = 1,
-        HotSpot = 2
+        Key = 1,
+        Axis = 2,
+        HotSpot = 4
     };
     enum class HotSpot {
         TopLeftCorner,
@@ -37,7 +37,7 @@ public:
         BottomLeftCorner,
         BottomRightCorner
     };
-    explicit Binding(Type t);
+    Binding();
     ~Binding();
 
     void setIsToggle(bool toggle);
@@ -59,8 +59,8 @@ private:
     bool checkToggled();
 
     weston_binding *m_binding;
-    bool m_isHotSpot;
     bool m_isToggle;
+    int m_type;
 
     friend class Shell;
 };
@@ -68,6 +68,11 @@ private:
 inline Binding::Type operator|(Binding::Type a, Binding::Type b)
 {
     return (Binding::Type)((int)a | (int)b);
+}
+
+inline int operator&(Binding::Type a, Binding::Type b)
+{
+    return (int)a & (int)b;
 }
 
 #endif

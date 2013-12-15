@@ -20,10 +20,10 @@
 #include "utils.h"
 #include "binding.h"
 
-ZoomEffect::ZoomEffect(Shell *shell)
-          : Effect(shell)
+ZoomEffect::ZoomEffect()
+          : Effect()
 {
-    Binding *b = new Binding(Binding::Type::Axis);
+    Binding *b = new Binding();
     b->axisTriggered.connect(this, &ZoomEffect::run);
     addBinding("Zoom", b);
 }
@@ -58,3 +58,47 @@ void ZoomEffect::run(struct weston_seat *seat, uint32_t time, uint32_t axis, wl_
         }
     }
 }
+
+
+
+ZoomEffect::Settings::Settings()
+           : Effect::Settings()
+           , m_effect(nullptr)
+{
+}
+
+ZoomEffect::Settings::~Settings()
+{
+    delete m_effect;
+}
+
+std::list<Option> ZoomEffect::Settings::options() const
+{
+    auto list = Effect::Settings::options();
+    list.push_back(Option("zoom_binding", Binding::Type::Axis, Option::BindingValue::axis(WL_POINTER_AXIS_VERTICAL_SCROLL, MODIFIER_SUPER)));
+
+    return list;
+}
+
+void ZoomEffect::Settings::set(const std::string &name, int v)
+{
+    if (name == "enabled") {
+        if (v && !m_effect) {
+            m_effect = new ZoomEffect;
+            const Option *o = option("zoom_binding");
+            o->valueAsBinding().bind(m_effect->binding("Zoom"));
+        } else if (!v) {
+            delete m_effect;
+            m_effect = nullptr;
+        }
+    }
+}
+
+void ZoomEffect::Settings::set(const std::string &name, const Option::BindingValue &v)
+{
+    if (name == "zoom_binding" && m_effect) {
+        v.bind(m_effect->binding("Zoom"));
+    }
+}
+
+SETTINGS(zoom_effect, ZoomEffect::Settings)

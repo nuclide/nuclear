@@ -31,20 +31,15 @@
 #include "shellsurface.h"
 #include "binding.h"
 
-#include "scaleeffect.h"
-#include "griddesktops.h"
-#include "fademovingeffect.h"
-#include "zoomeffect.h"
-#include "inoutsurfaceeffect.h"
 #include "inputpanel.h"
 #include "shellseat.h"
 #include "workspace.h"
-#include "minimizeeffect.h"
 #include "wl_shell/wlshell.h"
 #include "xwlshell.h"
 #include "desktopshellwindow.h"
 #include "desktopshellworkspace.h"
 #include "animation.h"
+#include "settings.h"
 
 class Splash {
 public:
@@ -153,17 +148,16 @@ void DesktopShell::init()
     addInterface(wls);
     addInterface(new XWlShell);
 
-    Effect *e = new ScaleEffect(this);
-    e->binding("Toggle")->bindKey(KEY_E, MODIFIER_CTRL);
-    e->binding("Toggle")->bindHotSpot(Binding::HotSpot::TopLeftCorner);
-    e = new GridDesktops(this);
-    e->binding("Toggle")->bindKey(KEY_G, MODIFIER_CTRL);
-    e->binding("Toggle")->bindHotSpot(Binding::HotSpot::TopRightCorner);
-    new FadeMovingEffect(this);
-    e = new ZoomEffect(this);
-    e->binding("Zoom")->bindAxis(WL_POINTER_AXIS_VERTICAL_SCROLL, MODIFIER_SUPER);
-    new InOutSurfaceEffect(this);
-    new MinimizeEffect(this);
+    SettingsManager::set("effects/scale_effect", "enabled", 1);
+    SettingsManager::set("effects/scale_effect", "toggle_binding", Option::BindingValue::hotSpot(Binding::HotSpot::TopLeftCorner));
+
+    SettingsManager::set("effects/griddesktops_effect", "enabled", 1);
+    SettingsManager::set("effects/griddesktops_effect", "toggle_binding", Option::BindingValue::hotSpot(Binding::HotSpot::TopRightCorner));
+
+    SettingsManager::set("effects/zoom_effect", "enabled", 1);
+    SettingsManager::set("effects/fademoving_effect", "enabled", 1);
+    SettingsManager::set("effects/inoutsurface_effect", "enabled", 1);
+    SettingsManager::set("effects/minimize_effect", "enabled", 1);
 
     m_inputPanel = new InputPanel(compositor()->wl_display);
     m_splash = new Splash;

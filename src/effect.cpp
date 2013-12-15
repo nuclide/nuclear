@@ -19,10 +19,9 @@
 #include "shell.h"
 #include "binding.h"
 
-Effect::Effect(Shell *shell)
-      : m_shell(shell)
+Effect::Effect()
 {
-    shell->registerEffect(this);
+    Shell::instance()->registerEffect(this);
 }
 
 Effect::~Effect()
@@ -50,4 +49,19 @@ Binding *Effect::binding(const std::string &name)
 void Effect::addBinding(const std::string &n, Binding *b)
 {
     m_bindings[n] = b;
+}
+
+
+
+Effect::Settings::Settings()
+                : ::Settings("effects")
+{
+}
+
+std::list<Option> Effect::Settings::options() const
+{
+    std::list<Option> list;
+    list.push_back(Option("enabled", 0));
+
+    return list;
 }

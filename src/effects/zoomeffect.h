@@ -22,7 +22,21 @@
 
 class ZoomEffect : public Effect {
 public:
-    ZoomEffect(Shell *shell);
+    class Settings : public Effect::Settings
+    {
+    public:
+        Settings();
+        ~Settings();
+
+        virtual std::list<Option> options() const override;
+        virtual void set(const std::string &name, int v) override;
+        virtual void set(const std::string &name, const Option::BindingValue &v) override;
+
+    private:
+        ZoomEffect *m_effect;
+    };
+
+    ZoomEffect();
     ~ZoomEffect();
 
 private:

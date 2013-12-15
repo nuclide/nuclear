@@ -20,17 +20,17 @@
 
 Binding *Binding::s_toggledBinding = nullptr;
 
-Binding::Binding(Type t)
+Binding::Binding()
         : m_binding(nullptr)
-        , m_isHotSpot(false)
         , m_isToggle(false)
+        , m_type(0)
 {
 }
 
 Binding::~Binding()
 {
     weston_binding_destroy(m_binding);
-    if (m_isHotSpot) {
+    if (m_type & (int)Type::HotSpot) {
         Shell::instance()->removeHotSpotBinding(this);
     }
 }
@@ -62,18 +62,29 @@ static void axisHandler(weston_seat *seat, uint32_t time, uint32_t axis, wl_fixe
 
 void Binding::bindKey(uint32_t key, weston_keyboard_modifier modifier)
 {
+    if (m_binding && m_type & (int)Type::Key) {
+        weston_binding_destroy(m_binding);
+    }
     m_binding = weston_compositor_add_key_binding(Shell::instance()->compositor(), key, modifier, keyHandler, this);
+    m_type |= (int)Type::Key;
 }
 
 void Binding::bindAxis(uint32_t axis, weston_keyboard_modifier modifier)
 {
+    if (m_binding && m_type & (int)Type::Axis) {
+        weston_binding_destroy(m_binding);
+    }
     m_binding = weston_compositor_add_axis_binding(Shell::instance()->compositor(), axis, modifier, axisHandler, this);
+    m_type |= (int)Type::Axis;
 }
 
 void Binding::bindHotSpot(HotSpot hs)
 {
-    m_isHotSpot = true;
+    if (m_type & (int)Type::HotSpot) {
+        Shell::instance()->removeHotSpotBinding(this);
+    }
     Shell::instance()->bindHotSpot(hs, this);
+    m_type |= (int)Type::HotSpot;
 }
 
 void Binding::hotSpotHandler(weston_seat *seat, uint32_t time, HotSpot hs)

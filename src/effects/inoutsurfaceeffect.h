@@ -25,7 +25,19 @@
 class InOutSurfaceEffect : public Effect
 {
 public:
-    InOutSurfaceEffect(Shell *shell);
+    class Settings : public Effect::Settings
+    {
+    public:
+        Settings();
+        ~Settings();
+
+        virtual void set(const std::string &name, int v) override;
+
+    private:
+        InOutSurfaceEffect *m_effect;
+    };
+
+    InOutSurfaceEffect();
     ~InOutSurfaceEffect();
 
 protected:

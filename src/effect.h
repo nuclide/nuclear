@@ -19,8 +19,11 @@
 #define EFFECT_H
 
 #include <unordered_map>
+#include <list>
 
 #include <weston/compositor.h>
+
+#include "settings.h"
 
 class Shell;
 class ShellSurface;
@@ -30,7 +33,7 @@ class Effect {
 public:
     typedef std::unordered_map<std::string, Binding *> Bindings;
 
-    Effect(Shell *shell);
+    Effect();
     virtual ~Effect();
     void addSurface(ShellSurface *surf);
     void removeSurface(ShellSurface *surf);
@@ -42,12 +45,16 @@ protected:
     virtual void addedSurface(ShellSurface *surf) {}
     virtual void removedSurface(ShellSurface *surf) {}
 
-    inline Shell *shell() const { return m_shell; }
-
     void addBinding(const std::string &n, Binding *b);
 
+    class Settings : public ::Settings
+    {
+    protected:
+        Settings();
+        virtual std::list<Option> options() const override;
+    };
+
 private:
-    Shell *m_shell;
     Bindings m_bindings;
 
 };

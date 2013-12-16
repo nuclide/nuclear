@@ -234,7 +234,7 @@ GridDesktops::Settings::~Settings()
 std::list<Option> GridDesktops::Settings::options() const
 {
     auto list = Effect::Settings::options();
-    list.push_back(Option("toggle_binding", Binding::Type::Key | Binding::Type::HotSpot, Option::BindingValue::key(KEY_G, MODIFIER_CTRL)));
+    list.push_back(Option::binding("toggle_binding", Binding::Type::Key | Binding::Type::HotSpot));
 
     return list;
 }

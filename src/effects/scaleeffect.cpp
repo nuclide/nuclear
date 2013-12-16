@@ -326,7 +326,7 @@ ScaleEffect::Settings::~Settings()
 std::list<Option> ScaleEffect::Settings::options() const
 {
     auto list = Effect::Settings::options();
-    list.push_back(Option("toggle_binding", Binding::Type::Key | Binding::Type::HotSpot, Option::BindingValue::key(KEY_E, MODIFIER_CTRL)));
+    list.push_back(Option::binding("toggle_binding", Binding::Type::Key | Binding::Type::HotSpot));
 
     return list;
 }

@@ -79,26 +79,34 @@ void Option::BindingValue::bind(Binding *b) const
     }
 }
 
-Option::Option(const char *n, const char *v)
-      : m_name(n)
-      , m_type(Type::String)
+
+Option Option::key(const char *n)
 {
-    m_defaultValue.string = v;
+    Option o;
+    o.m_name = n;
+    o.m_type = Type::String;
+    return o;
 }
 
-Option::Option(const char *n, int v)
-      : m_name(n)
-      , m_type(Type::Int)
+Option Option::integer(const char *n)
 {
-    m_defaultValue.integer = v;
+    Option o;
+    o.m_name = n;
+    o.m_type = Type::Int;
+    return o;
 }
 
-Option::Option(const char *n, Binding::Type a, const BindingValue &v)
-      : m_name(n)
-      , m_type(Type::Binding)
-      , m_allowableBinding(a)
+Option Option::binding(const char *n, Binding::Type allowable)
 {
-    m_defaultValue.binding.merge(v);
+    Option o;
+    o.m_name = n;
+    o.m_type = Type::Binding;
+    o.m_allowableBinding = allowable;
+    return o;
+}
+
+Option::Option()
+{
 }
 
 Option::Option(const Option &o)
@@ -111,12 +119,7 @@ Option &Option::operator=(const Option &o)
     m_name = o.m_name;
     m_type = o.m_type;
     m_allowableBinding = o.m_allowableBinding;
-    switch (m_type) {
-        case Type::String: m_defaultValue.string = o.m_defaultValue.string; break;
-        case Type::Int: m_defaultValue.integer = o.m_defaultValue.integer; break;
-        case Type::Binding: m_defaultValue.binding = o.m_defaultValue.binding; break;
-    }
-
+    m_value = o.m_value;
     return *this;
 }
 
@@ -215,25 +218,6 @@ bool SettingsManager::set(const char *path, const char *option, const Option::Bi
 
 void SettingsManager::init()
 {
-    for (auto &i: s_settings) {
-        Settings *s = i.second;
-        for (auto &o: s->m_options) {
-            switch (o.second.m_type) {
-                case Option::Type::String:
-                    o.second.m_value.string = o.second.m_defaultValue.string;
-                    s->set(o.first, o.second.m_value.string);
-                    break;
-                case Option::Type::Int:
-                    o.second.m_value.integer = o.second.m_defaultValue.integer;
-                    s->set(o.first, o.second.m_value.integer);
-                    break;
-                case Option::Type::Binding:
-                    o.second.m_value.binding = o.second.m_defaultValue.binding;
-                    s->set(o.first, o.second.m_value.binding);
-                    break;
-            }
-        }
-    }
 }
 
 void SettingsManager::cleanup()

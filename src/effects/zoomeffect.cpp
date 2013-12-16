@@ -75,7 +75,7 @@ ZoomEffect::Settings::~Settings()
 std::list<Option> ZoomEffect::Settings::options() const
 {
     auto list = Effect::Settings::options();
-    list.push_back(Option("zoom_binding", Binding::Type::Axis, Option::BindingValue::axis(WL_POINTER_AXIS_VERTICAL_SCROLL, MODIFIER_SUPER)));
+    list.push_back(Option::binding("zoom_binding", Binding::Type::Axis));
 
     return list;
 }

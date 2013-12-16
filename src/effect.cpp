@@ -61,7 +61,7 @@ Effect::Settings::Settings()
 std::list<Option> Effect::Settings::options() const
 {
     std::list<Option> list;
-    list.push_back(Option("enabled", 0));
+    list.push_back(Option::integer("enabled"));
 
     return list;
 }

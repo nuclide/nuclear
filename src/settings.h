@@ -65,9 +65,10 @@ public:
         friend class SettingsManager;
     };
 
-    Option(const char *n, const char *v);
-    Option(const char *n, int v);
-    Option(const char *n, Binding::Type allowable, const BindingValue &v);
+    static Option key(const char *n);
+    static Option integer(const char *n);
+    static Option binding(const char *n, Binding::Type allowable);
+
     Option(const Option &o);
 
     Option &operator=(const Option &o);
@@ -79,6 +80,8 @@ public:
     const BindingValue &valueAsBinding() const;
 
 private:
+    Option();
+
     struct Value {
         Value() {}
         std::string string;
@@ -89,7 +92,6 @@ private:
     std::string m_name;
     Type m_type;
     Binding::Type m_allowableBinding;
-    Value m_defaultValue;
     Value m_value;
 
     friend class SettingsManager;

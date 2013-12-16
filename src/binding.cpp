@@ -29,10 +29,24 @@ Binding::Binding()
 
 Binding::~Binding()
 {
-    weston_binding_destroy(m_binding);
+    if (m_binding) {
+        weston_binding_destroy(m_binding);
+    }
     if (m_type & (int)Type::HotSpot) {
         Shell::instance()->removeHotSpotBinding(this);
     }
+}
+
+void Binding::reset()
+{
+    if (m_binding) {
+        weston_binding_destroy(m_binding);
+        m_binding = nullptr;
+    }
+    if (m_type & (int)Type::HotSpot) {
+        Shell::instance()->removeHotSpotBinding(this);
+    }
+    m_type = 0;
 }
 
 void Binding::setIsToggle(bool t)

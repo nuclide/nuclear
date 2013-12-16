@@ -32,13 +32,14 @@ public:
         HotSpot = 4
     };
     enum class HotSpot {
-        TopLeftCorner,
-        TopRightCorner,
-        BottomLeftCorner,
-        BottomRightCorner
+        TopLeftCorner = 1,
+        TopRightCorner = 2,
+        BottomLeftCorner = 4,
+        BottomRightCorner = 8
     };
     Binding();
     ~Binding();
+    void reset();
 
     void setIsToggle(bool toggle);
     void releaseToggle();

@@ -118,4 +118,12 @@ void FadeMovingEffect::Settings::set(const std::string &name, int v)
     }
 }
 
+void FadeMovingEffect::Settings::unSet(const std::string &name)
+{
+    if (name == "enabled") {
+        delete m_effect;
+        m_effect = nullptr;
+    }
+}
+
 SETTINGS(fademoving_effect, FadeMovingEffect::Settings)

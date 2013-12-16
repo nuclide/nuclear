@@ -43,7 +43,7 @@ public:
 
     private:
         BindingValue(Binding::Type t, uint32_t f, uint32_t s);
-        BindingValue() {}
+        BindingValue() : type(0) {}
 
         void merge(const BindingValue &v);
 
@@ -75,12 +75,14 @@ public:
 
     inline Type type() const { return m_type; }
 
+    inline bool isSet() const { return m_set; }
     std::string valueAsString() const;
     int valueAsInt() const;
     const BindingValue &valueAsBinding() const;
 
 private:
     Option();
+    void unSet();
 
     struct Value {
         Value() {}
@@ -89,6 +91,7 @@ private:
         BindingValue binding;
     };
 
+    bool m_set;
     std::string m_name;
     Type m_type;
     Binding::Type m_allowableBinding;
@@ -101,6 +104,7 @@ class Settings;
 class SettingsManager
 {
 public:
+    static bool unSet(const char *path, const char *option);
     static bool set(const char *path, const char *option, const std::string &value);
     static bool set(const char *path, const char *option, int value);
     static bool set(const char *path, const char *option, const Option::BindingValue &value);
@@ -125,6 +129,7 @@ public:
 
     virtual std::list<Option> options() const = 0;
 
+    virtual void unSet(const std::string &name) {}
     virtual void set(const std::string &name, const std::string &v) {}
     virtual void set(const std::string &name, int v) {}
     virtual void set(const std::string &name, const Option::BindingValue &v) {}

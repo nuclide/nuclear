@@ -29,6 +29,7 @@ public:
         ~Settings();
 
         virtual std::list<Option> options() const override;
+        virtual void unSet(const std::string &name) override;
         virtual void set(const std::string &name, int v) override;
         virtual void set(const std::string &name, const Option::BindingValue &v) override;
 

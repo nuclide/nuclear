@@ -110,4 +110,12 @@ void InOutSurfaceEffect::Settings::set(const std::string &name, int v)
     }
 }
 
+void InOutSurfaceEffect::Settings::unSet(const std::string &name)
+{
+    if (name == "enabled") {
+        delete m_effect;
+        m_effect = nullptr;
+    }
+}
+
 SETTINGS(inoutsurface_effect, InOutSurfaceEffect::Settings)

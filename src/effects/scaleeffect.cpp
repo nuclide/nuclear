@@ -331,6 +331,16 @@ std::list<Option> ScaleEffect::Settings::options() const
     return list;
 }
 
+void ScaleEffect::Settings::unSet(const std::string &name)
+{
+    if (name == "enabled") {
+        delete m_effect;
+        m_effect = nullptr;
+    } else if (name == "toggle_binding") {
+        m_effect->binding("Toggle")->reset();
+    }
+}
+
 void ScaleEffect::Settings::set(const std::string &name, int v)
 {
     if (name == "enabled") {

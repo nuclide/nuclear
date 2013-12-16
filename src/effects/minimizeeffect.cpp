@@ -144,4 +144,12 @@ void MinimizeEffect::Settings::set(const std::string &name, int v)
     }
 }
 
+void MinimizeEffect::Settings::unSet(const std::string &name)
+{
+    if (name == "enabled") {
+        delete m_effect;
+        m_effect = nullptr;
+    }
+}
+
 SETTINGS(minimize_effect, MinimizeEffect::Settings)

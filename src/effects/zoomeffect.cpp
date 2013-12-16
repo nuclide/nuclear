@@ -80,6 +80,16 @@ std::list<Option> ZoomEffect::Settings::options() const
     return list;
 }
 
+void ZoomEffect::Settings::unSet(const std::string &name)
+{
+    if (name == "enabled") {
+        delete m_effect;
+        m_effect = nullptr;
+    } else if (name == "zoom_binding") {
+        m_effect->binding("Zoom")->reset();
+    }
+}
+
 void ZoomEffect::Settings::set(const std::string &name, int v)
 {
     if (name == "enabled") {

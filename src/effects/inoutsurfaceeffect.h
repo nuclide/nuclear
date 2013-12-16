@@ -31,6 +31,7 @@ public:
         Settings();
         ~Settings();
 
+        virtual void unSet(const std::string &name) override;
         virtual void set(const std::string &name, int v) override;
 
     private:

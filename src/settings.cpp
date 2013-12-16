@@ -68,6 +68,7 @@ void Option::BindingValue::merge(const BindingValue &v)
 
 void Option::BindingValue::bind(Binding *b) const
 {
+    b->reset();
     if (type & (int)Binding::Type::Key) {
         b->bindKey(value.key.key, value.key.mod);
     }
@@ -106,6 +107,7 @@ Option Option::binding(const char *n, Binding::Type allowable)
 }
 
 Option::Option()
+      : m_set(false)
 {
 }
 
@@ -121,6 +123,16 @@ Option &Option::operator=(const Option &o)
     m_allowableBinding = o.m_allowableBinding;
     m_value = o.m_value;
     return *this;
+}
+
+void Option::unSet()
+{
+    m_set = false;
+    switch (m_type) {
+        case Type::String: m_value.string = ""; break;
+        case Type::Int: m_value.integer = 0; break;
+        case Type::Binding: m_value.binding.type = 0; break;
+    }
 }
 
 std::string Option::valueAsString() const
@@ -174,6 +186,20 @@ bool SettingsManager::addSettings(Settings *s)
     return true;
 }
 
+bool SettingsManager::unSet(const char *path, const char *option)
+{
+    Settings *s = s_settings[path];
+    if (s) {
+        auto it = s->m_options.find(option);
+        if (it != s->m_options.end()) {
+            it->second.unSet();
+            s->unSet(option);
+            return true;
+        }
+    }
+    return false;
+}
+
 bool SettingsManager::set(const char *path, const char *option, const std::string &v)
 {
     Settings *s = s_settings[path];
@@ -181,6 +207,7 @@ bool SettingsManager::set(const char *path, const char *option, const std::strin
         auto it = s->m_options.find(option);
         if (it != s->m_options.end() && it->second.m_type == Option::Type::String) {
             it->second.m_value.string = v;
+            it->second.m_set = true;
             s->set(option, v);
             return true;
         }
@@ -195,6 +222,7 @@ bool SettingsManager::set(const char *path, const char *option, int v)
         auto it = s->m_options.find(option);
         if (it != s->m_options.end() && it->second.m_type == Option::Type::Int) {
             it->second.m_value.integer = v;
+            it->second.m_set = true;
             s->set(option, v);
             return true;
         }
@@ -209,6 +237,7 @@ bool SettingsManager::set(const char *path, const char *option, const Option::Bi
         auto it = s->m_options.find(option);
         if (it != s->m_options.end() && it->second.m_type == Option::Type::Binding && (int)it->second.m_allowableBinding & v.type) {
             it->second.m_value.binding.merge(v);
+            it->second.m_set = true;
             s->set(option, it->second.m_value.binding);
             return true;
         }

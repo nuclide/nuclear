@@ -25,6 +25,7 @@ set(SOURCES
     inputpanel.cpp
     binding.cpp
     settings.cpp
+    settingsinterface.cpp
     interface.cpp
     xwlshell.cpp
     wl_shell/wlshell.cpp
@@ -44,6 +45,11 @@ wayland_add_protocol_server(SOURCES
 wayland_add_protocol_server(SOURCES
     ${CMAKE_SOURCE_DIR}/protocol/input-method.xml
     input-method
+)
+
+wayland_add_protocol_server(SOURCES
+    ${CMAKE_SOURCE_DIR}/protocol/settings.xml
+    settings
 )
 
 add_library(nuclear-shell-common SHARED ${SOURCES})

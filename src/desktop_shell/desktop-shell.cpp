@@ -40,6 +40,7 @@
 #include "desktopshellworkspace.h"
 #include "animation.h"
 #include "settings.h"
+#include "settingsinterface.h"
 
 class Splash {
 public:
@@ -147,17 +148,7 @@ void DesktopShell::init()
     wls->surfaceResponsivenessChangedSignal.connect(this, &DesktopShell::surfaceResponsivenessChanged);
     addInterface(wls);
     addInterface(new XWlShell);
-
-    SettingsManager::set("effects/scale_effect", "enabled", 1);
-    SettingsManager::set("effects/scale_effect", "toggle_binding", Option::BindingValue::hotSpot(Binding::HotSpot::TopLeftCorner));
-
-    SettingsManager::set("effects/griddesktops_effect", "enabled", 1);
-    SettingsManager::set("effects/griddesktops_effect", "toggle_binding", Option::BindingValue::hotSpot(Binding::HotSpot::TopRightCorner));
-
-    SettingsManager::set("effects/zoom_effect", "enabled", 1);
-    SettingsManager::set("effects/fademoving_effect", "enabled", 1);
-    SettingsManager::set("effects/inoutsurface_effect", "enabled", 1);
-    SettingsManager::set("effects/minimize_effect", "enabled", 1);
+    addInterface(new SettingsInterface);
 
     m_inputPanel = new InputPanel(compositor()->wl_display);
     m_splash = new Splash;

@@ -20,10 +20,21 @@
 #include "settings.h"
 
 Option::BindingValue::BindingValue(Binding::Type t, uint32_t f, uint32_t s)
-                    : type(t)
-                    , first(f)
-                    , second(s)
+                    : type((int)t)
 {
+    switch (t) {
+        case Binding::Type::Key:
+            value.key.key = f;
+            value.key.mod = (weston_keyboard_modifier)s;
+        break;
+        case Binding::Type::Axis:
+            value.axis.axis = f;
+            value.axis.mod = (weston_keyboard_modifier)s;
+        break;
+        case Binding::Type::HotSpot:
+            value.hotSpot = (Binding::HotSpot)f;
+        break;
+    }
 }
 
 Option::BindingValue Option::BindingValue::key(uint32_t key, weston_keyboard_modifier modifier)
@@ -41,18 +52,30 @@ Option::BindingValue Option::BindingValue::hotSpot(Binding::HotSpot hs)
     return BindingValue(Binding::Type::HotSpot, (uint32_t)hs, 0);
 }
 
+void Option::BindingValue::merge(const BindingValue &v)
+{
+    type |= v.type;
+    if (v.type & (int)Binding::Type::Key) {
+        value.key = v.value.key;
+    }
+    if (v.type & (int)Binding::Type::Axis) {
+        value.axis = v.value.axis;
+    }
+    if (v.type & (int)Binding::Type::HotSpot) {
+        value.hotSpot = v.value.hotSpot;
+    }
+}
+
 void Option::BindingValue::bind(Binding *b) const
 {
-    switch (type) {
-        case Binding::Type::Key:
-            b->bindKey(first, (weston_keyboard_modifier)second);
-            break;
-        case Binding::Type::Axis:
-            b->bindAxis(first, (weston_keyboard_modifier)second);
-            break;
-        case Binding::Type::HotSpot:
-            b->bindHotSpot((Binding::HotSpot)first);
-            break;
+    if (type & (int)Binding::Type::Key) {
+        b->bindKey(value.key.key, value.key.mod);
+    }
+    if (type & (int)Binding::Type::Axis) {
+        b->bindAxis(value.axis.axis, value.axis.mod);
+    }
+    if (type & (int)Binding::Type::HotSpot) {
+        b->bindHotSpot(value.hotSpot);
     }
 }
 
@@ -75,7 +98,7 @@ Option::Option(const char *n, Binding::Type a, const BindingValue &v)
       , m_type(Type::Binding)
       , m_allowableBinding(a)
 {
-    m_defaultValue.binding = v;
+    m_defaultValue.binding.merge(v);
 }
 
 Option::Option(const Option &o)
@@ -181,9 +204,9 @@ bool SettingsManager::set(const char *path, const char *option, const Option::Bi
     Settings *s = s_settings[path];
     if (s) {
         auto it = s->m_options.find(option);
-        if (it != s->m_options.end() && it->second.m_type == Option::Type::Binding && it->second.m_allowableBinding & v.type) {
-            it->second.m_value.binding = v;
-            s->set(option, v);
+        if (it != s->m_options.end() && it->second.m_type == Option::Type::Binding && (int)it->second.m_allowableBinding & v.type) {
+            it->second.m_value.binding.merge(v);
+            s->set(option, it->second.m_value.binding);
             return true;
         }
     }

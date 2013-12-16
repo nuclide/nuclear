@@ -45,11 +45,23 @@ public:
         BindingValue(Binding::Type t, uint32_t f, uint32_t s);
         BindingValue() {}
 
-        Binding::Type type;
-        uint32_t first;
-        uint32_t second;
+        void merge(const BindingValue &v);
+
+        int type;
+        struct {
+            struct {
+                uint32_t key;
+                weston_keyboard_modifier mod;
+            } key;
+            struct {
+                uint32_t axis;
+                weston_keyboard_modifier mod;
+            } axis;
+            Binding::HotSpot hotSpot;
+        } value;
 
         friend struct Value;
+        friend class Option;
         friend class SettingsManager;
     };
 

@@ -34,6 +34,23 @@ void SettingsInterface::bind(wl_client *client, uint32_t version, uint32_t id)
 
     if (Shell::instance()->isTrusted(client, "nuclear_settings")) {
         wl_resource_set_implementation(resource, &s_implementation, this, nullptr);
+
+        for (auto &s: SettingsManager::settings()) {
+            for (const Option &option: s.second->options()) {
+                const std::string &path = s.second->path();
+                switch (option.type()) {
+                    case Option::Type::String:
+                        nuclear_settings_send_string_option(resource, path.c_str(), option.name().c_str());
+                        break;
+                    case Option::Type::Int:
+                        nuclear_settings_send_integer_option(resource, path.c_str(), option.name().c_str());
+                        break;
+                    case Option::Type::Binding:
+                        nuclear_settings_send_binding_option(resource, path.c_str(), option.name().c_str(), (int)option.allowableBindingTypes());
+                        break;
+                }
+            }
+        }
         return;
     }
 

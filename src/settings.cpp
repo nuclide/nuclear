@@ -135,6 +135,15 @@ void Option::unSet()
     }
 }
 
+Binding::Type Option::allowableBindingTypes() const
+{
+    if (m_type != Type::Binding) {
+        return (Binding::Type)0;
+    }
+
+    return m_allowableBinding;
+}
+
 std::string Option::valueAsString() const
 {
     assert(m_type == Type::String);
@@ -171,6 +180,11 @@ const Option *Settings::option(const std::string &name) const
     return &it->second;
 }
 
+std::string Settings::path() const
+{
+    return m_group + "/" + m_name;
+}
+
 
 
 std::unordered_map<std::string, Settings *> SettingsManager::s_settings;
@@ -182,7 +196,7 @@ bool SettingsManager::addSettings(Settings *s)
         s->m_options.insert(std::pair<std::string, Option>(o.m_name, o));
     }
 
-    s_settings[s->m_group + "/" + s->m_name] = s;
+    s_settings[s->path()] = s;
     return true;
 }
 

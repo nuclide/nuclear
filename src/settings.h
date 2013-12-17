@@ -73,9 +73,11 @@ public:
 
     Option &operator=(const Option &o);
 
+    inline const std::string &name() const { return m_name; }
     inline Type type() const { return m_type; }
 
     inline bool isSet() const { return m_set; }
+    Binding::Type allowableBindingTypes() const;
     std::string valueAsString() const;
     int valueAsInt() const;
     const BindingValue &valueAsBinding() const;
@@ -112,6 +114,8 @@ public:
     static void init();
     static void cleanup();
 
+    static const std::unordered_map<std::string, Settings *> &settings() { return s_settings; }
+
 private:
     static bool addSettings(Settings *s);
 
@@ -135,6 +139,7 @@ public:
     virtual void set(const std::string &name, const Option::BindingValue &v) {}
 
     const Option *option(const std::string &name) const;
+    std::string path() const;
 
     template <class T>
     static bool create(const char *name)

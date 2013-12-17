@@ -36,18 +36,37 @@
             <arg name="hotspot" type="uint"/>
         </request>
 
+        <event name="string_option">
+            <arg name="path" type="string"/>
+            <arg name="option" type="string"/>
+        </event>
+        <event name="integer_option">
+            <arg name="path" type="string"/>
+            <arg name="option" type="string"/>
+        </event>
+        <event name="binding_option">
+            <arg name="path" type="string"/>
+            <arg name="option" type="string"/>
+            <arg name="allowed_types" type="int"/>
+        </event>
+
         <enum name="modifier">
             <entry name="ctrl" value="1"/>
             <entry name="alt" value="2"/>
             <entry name="super" value="4"/>
             <entry name="shift" value="8"/>
         </enum>
+        <enum name="binding_type">
+            <entry name="key" value="1"/>
+            <entry name="axis" value="2"/>
+            <entry name="hotspot" value="4"/>
+        </enum>
         <enum name="hotspot">
             <entry name="top_left_corner" value="1"/>
             <entry name="top_right_corner" value="2"/>
             <entry name="bottom_left_corner" value="4"/>
             <entry name="bottom_right_corner" value="8"/>
-            </enum>
+        </enum>
 
     </interface>
 </protocol>

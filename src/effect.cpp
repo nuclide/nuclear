@@ -21,7 +21,8 @@
 
 Effect::Effect()
 {
-    Shell::instance()->registerEffect(this);
+    wl_event_loop *loop = wl_display_get_event_loop(Shell::instance()->compositor()->wl_display);
+    wl_event_loop_add_idle(loop, [](void *data) { Shell::instance()->registerEffect(static_cast<Effect *>(data)); }, this);
 }
 
 Effect::~Effect()

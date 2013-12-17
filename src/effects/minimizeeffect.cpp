@@ -84,11 +84,11 @@ MinimizeEffect::MinimizeEffect()
 
 MinimizeEffect::~MinimizeEffect()
 {
-    for (auto i = m_surfaces.begin(); i != m_surfaces.end(); ++i) {
-        Surface *s = *i;
+    while (!m_surfaces.empty()) {
+        Surface *s = m_surfaces.front();
         s->surface->minimizedSignal.disconnect(s);
-        delete *i;
-        m_surfaces.erase(i);
+        delete s;
+        m_surfaces.pop_front();
     }
 }
 

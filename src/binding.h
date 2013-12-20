@@ -28,8 +28,9 @@ class Binding {
 public:
     enum class Type {
         Key = 1,
-        Axis = 2,
-        HotSpot = 4
+        Button = 2,
+        Axis = 4,
+        HotSpot = 8
     };
     enum class HotSpot {
         TopLeftCorner = 1,
@@ -45,15 +46,18 @@ public:
     void releaseToggle();
 
     void bindKey(uint32_t key, weston_keyboard_modifier modifier);
+    void bindButton(uint32_t key, weston_keyboard_modifier modifier);
     void bindAxis(uint32_t axis, weston_keyboard_modifier modifier);
     void bindHotSpot(HotSpot hs);
 
     Signal<weston_seat *, uint32_t, uint32_t> keyTriggered;
+    Signal<weston_seat *, uint32_t, uint32_t> buttonTriggered;
     Signal<weston_seat *, uint32_t, uint32_t, wl_fixed_t> axisTriggered;
     Signal<weston_seat *, uint32_t, HotSpot> hotSpotTriggered;
 
 private:
     static void keyHandler(weston_seat *seat, uint32_t time, uint32_t key, void *data);
+    static void buttonHandler(weston_seat *seat, uint32_t time, uint32_t key, void *data);
     static Binding *s_toggledBinding;
 
     void hotSpotHandler(weston_seat *seat, uint32_t time, HotSpot hs);

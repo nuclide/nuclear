@@ -35,6 +35,7 @@ private:
     void setKeyBinding(wl_client *client, wl_resource *resource, const char *path, const char *name, uint32_t key, uint32_t mod);
     void setAxisBinding(wl_client *client, wl_resource *resource, const char *path, const char *name, uint32_t axis, uint32_t mod);
     void setHotSpotBinding(wl_client *client, wl_resource *resource, const char *path, const char *name, uint32_t hotspot);
+    void setButtonBinding(wl_client *client, wl_resource *resource, const char *path, const char *name, uint32_t button, uint32_t mod);
 
     static const struct nuclear_settings_interface s_implementation;
 };

@@ -36,6 +36,7 @@ public:
     class BindingValue {
     public:
         static BindingValue key(uint32_t key, weston_keyboard_modifier modifier);
+        static BindingValue button(uint32_t button, weston_keyboard_modifier modifier);
         static BindingValue axis(uint32_t axis, weston_keyboard_modifier modifier);
         static BindingValue hotSpot(Binding::HotSpot hs);
 
@@ -54,6 +55,10 @@ public:
                 weston_keyboard_modifier mod;
             } key;
             struct {
+                uint32_t button;
+                weston_keyboard_modifier mod;
+            } button;
+            struct {
                 uint32_t axis;
                 weston_keyboard_modifier mod;
             } axis;
@@ -65,7 +70,7 @@ public:
         friend class SettingsManager;
     };
 
-    static Option key(const char *n);
+    static Option string(const char *n);
     static Option integer(const char *n);
     static Option binding(const char *n, Binding::Type allowable);
 

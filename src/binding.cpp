@@ -69,6 +69,14 @@ void Binding::keyHandler(weston_seat *seat, uint32_t time, uint32_t key, void *d
     }
 }
 
+void Binding::buttonHandler(weston_seat *seat, uint32_t time, uint32_t button, void *data)
+{
+    Binding *b = static_cast<Binding *>(data);
+    if (b->checkToggled()) {
+        b->buttonTriggered(seat, time, button);
+    }
+}
+
 static void axisHandler(weston_seat *seat, uint32_t time, uint32_t axis, wl_fixed_t value, void *data)
 {
     static_cast<Binding *>(data)->axisTriggered(seat, time, axis, value);
@@ -81,6 +89,15 @@ void Binding::bindKey(uint32_t key, weston_keyboard_modifier modifier)
     }
     m_binding = weston_compositor_add_key_binding(Shell::instance()->compositor(), key, modifier, keyHandler, this);
     m_type |= (int)Type::Key;
+}
+
+void Binding::bindButton(uint32_t button, weston_keyboard_modifier modifier)
+{
+    if (m_binding && m_type & (int)Type::Button) {
+        weston_binding_destroy(m_binding);
+    }
+    m_binding = weston_compositor_add_button_binding(Shell::instance()->compositor(), button, modifier, buttonHandler, this);
+    m_type |= (int)Type::Button;
 }
 
 void Binding::bindAxis(uint32_t axis, weston_keyboard_modifier modifier)

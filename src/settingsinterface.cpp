@@ -88,11 +88,17 @@ void SettingsInterface::setHotSpotBinding(wl_client *client, wl_resource *resour
     SettingsManager::set(path, name, Option::BindingValue::hotSpot((Binding::HotSpot)hotspot));
 }
 
+void SettingsInterface::setButtonBinding(wl_client *client, wl_resource *resource, const char *path, const char *name, uint32_t button, uint32_t mod)
+{
+    SettingsManager::set(path, name, Option::BindingValue::button(button, (weston_keyboard_modifier)mod));
+}
+
 const struct nuclear_settings_interface SettingsInterface::s_implementation = {
     wrapInterface(&SettingsInterface::unset),
     wrapInterface(&SettingsInterface::setString),
     wrapInterface(&SettingsInterface::setInt),
     wrapInterface(&SettingsInterface::setKeyBinding),
     wrapInterface(&SettingsInterface::setAxisBinding),
-    wrapInterface(&SettingsInterface::setHotSpotBinding)
+    wrapInterface(&SettingsInterface::setHotSpotBinding),
+    wrapInterface(&SettingsInterface::setButtonBinding)
 };

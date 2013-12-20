@@ -27,6 +27,10 @@ Option::BindingValue::BindingValue(Binding::Type t, uint32_t f, uint32_t s)
             value.key.key = f;
             value.key.mod = (weston_keyboard_modifier)s;
         break;
+        case Binding::Type::Button:
+            value.button.button = f;
+            value.button.mod = (weston_keyboard_modifier)s;
+            break;
         case Binding::Type::Axis:
             value.axis.axis = f;
             value.axis.mod = (weston_keyboard_modifier)s;
@@ -40,6 +44,11 @@ Option::BindingValue::BindingValue(Binding::Type t, uint32_t f, uint32_t s)
 Option::BindingValue Option::BindingValue::key(uint32_t key, weston_keyboard_modifier modifier)
 {
     return BindingValue(Binding::Type::Key, key, modifier);
+}
+
+Option::BindingValue Option::BindingValue::button(uint32_t button, weston_keyboard_modifier modifier)
+{
+    return BindingValue(Binding::Type::Button, button, modifier);
 }
 
 Option::BindingValue Option::BindingValue::axis(uint32_t axis, weston_keyboard_modifier modifier)
@@ -58,6 +67,9 @@ void Option::BindingValue::merge(const BindingValue &v)
     if (v.type & (int)Binding::Type::Key) {
         value.key = v.value.key;
     }
+    if (v.type & (int)Binding::Type::Button) {
+        value.button = v.value.button;
+    }
     if (v.type & (int)Binding::Type::Axis) {
         value.axis = v.value.axis;
     }
@@ -72,6 +84,9 @@ void Option::BindingValue::bind(Binding *b) const
     if (type & (int)Binding::Type::Key) {
         b->bindKey(value.key.key, value.key.mod);
     }
+    if (type & (int)Binding::Type::Button) {
+        b->bindButton(value.button.button, value.button.mod);
+    }
     if (type & (int)Binding::Type::Axis) {
         b->bindAxis(value.axis.axis, value.axis.mod);
     }
@@ -81,7 +96,7 @@ void Option::BindingValue::bind(Binding *b) const
 }
 
 
-Option Option::key(const char *n)
+Option Option::string(const char *n)
 {
     Option o;
     o.m_name = n;

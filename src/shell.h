@@ -97,7 +97,7 @@ public:
     };
 
     template<class T>
-    static Shell *load(struct weston_compositor *ec, char *client);
+    static T *load(struct weston_compositor *ec, char *client);
     virtual ~Shell();
 
     void launchShellProcess();
@@ -224,15 +224,14 @@ private:
 };
 
 template<class T>
-Shell *Shell::load(struct weston_compositor *ec, char *client)
+T *Shell::load(struct weston_compositor *ec, char *client)
 {
     Shell *shell = new T(ec);
     if (shell) {
         shell->m_clientPath = client;
-        shell->init();
     }
 
-    return shell;
+    return static_cast<T *>(shell);
 }
 
 #endif

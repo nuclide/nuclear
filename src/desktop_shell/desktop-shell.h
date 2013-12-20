@@ -31,6 +31,7 @@ class DesktopShellWorkspace;
 class Splash;
 class Client;
 class Binding;
+class SessionManager;
 
 class DesktopShell : public Shell {
 public:
@@ -93,8 +94,10 @@ private:
     Binding *m_resizeBinding;
     Binding *m_prevWsBinding;
     Binding *m_nextWsBinding;
+    SessionManager *m_sessionManager;
 
     friend class DesktopShellSettings;
+    friend int module_init(weston_compositor *ec, int *argc, char *argv[]);
 };
 
 #endif

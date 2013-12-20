@@ -35,12 +35,14 @@
 #include "shellseat.h"
 #include "workspace.h"
 #include "wl_shell/wlshell.h"
+#include "wl_shell/wlshellsurface.h"
 #include "xwlshell.h"
 #include "desktopshellwindow.h"
 #include "desktopshellworkspace.h"
 #include "animation.h"
 #include "settings.h"
 #include "settingsinterface.h"
+#include "sessionmanager.h"
 
 class Splash {
 public:
@@ -109,6 +111,7 @@ struct Client {
 
 DesktopShell::DesktopShell(struct weston_compositor *ec)
             : Shell(ec)
+            , m_sessionManager(nullptr)
 {
 }
 
@@ -124,6 +127,20 @@ DesktopShell::~DesktopShell()
     delete m_resizeBinding;
     delete m_prevWsBinding;
     delete m_nextWsBinding;
+
+    if (m_sessionManager) {
+        std::list<pid_t> pids;
+        for (ShellSurface *s: surfaces()) {
+            WlShellSurface *w = s->findInterface<WlShellSurface>();
+            if (w) {
+                wl_client *c = wl_resource_get_client(w->resource());
+                pid_t pid;
+                wl_client_get_credentials(c, &pid, nullptr, nullptr);
+                pids.push_back(pid);
+            }
+        }
+        m_sessionManager->save(pids);
+    }
 }
 
 void DesktopShell::init()
@@ -723,6 +740,9 @@ void DesktopShell::setGrabSurface(struct wl_client *client, struct wl_resource *
 
 void DesktopShell::desktopReady(struct wl_client *client, struct wl_resource *resource)
 {
+    if (m_sessionManager) {
+        m_sessionManager->restore();
+    }
     m_splash->fadeOut();
 }
 
@@ -921,19 +941,26 @@ module_init(struct weston_compositor *ec, int *argc, char *argv[])
 {
 
     char *client = nullptr;
+    char *sfile = nullptr;
 
-    for (int i = 0; i < *argc; ++i) {
+    for (int i = *argc - 1; i >= 0; --i) {
         if (char *s = strstr(argv[i], "--nuclear-client=")) {
             client = strdup(s + 17);
             --*argc;
-            break;
+        } else if (char *s = strstr(argv[i], "--session-file=")) {
+            sfile = strdup(s + 15);
+            --*argc;
         }
     }
 
-    Shell *shell = Shell::load<DesktopShell>(ec, client);
+    DesktopShell *shell = Shell::load<DesktopShell>(ec, client);
     if (!shell) {
         return -1;
     }
+    if (sfile) {
+        shell->m_sessionManager = new SessionManager(sfile);
+    }
+    shell->init();
 
     return 0;
 }

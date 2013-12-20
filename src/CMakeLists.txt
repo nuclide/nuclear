@@ -27,6 +27,7 @@ set(SOURCES
     settings.cpp
     settingsinterface.cpp
     interface.cpp
+    sessionmanager.cpp
     xwlshell.cpp
     wl_shell/wlshell.cpp
     wl_shell/wlshellsurface.cpp

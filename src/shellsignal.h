@@ -19,6 +19,7 @@
 #define SIGNAL_H
 
 #include <list>
+#include <functional>
 
 template<class... Args>
 class Functor;
@@ -29,6 +30,7 @@ public:
     Signal() : m_flush(false), m_calling(false) { }
 
     template<class T> void connect(T *obj, void (T::*func)(Args...));
+    void connect(const std::function<void (Args...)> &func);
     template<class T> void disconnect(T *obj, void (T::*func)(Args...));
     template<class T> void disconnect(T *obj);
     template<class T> bool isConnected(T *obj, void (T::*func)(Args...));
@@ -47,6 +49,14 @@ private:
         bool m_called;
         bool m_toDelete;
         bool m_calling;
+    };
+
+    class FunctionFunctor : public Functor {
+    public:
+        FunctionFunctor(const std::function<void (Args...)> &func) : m_func(func) {}
+        virtual void call(Args... args) override { m_func(args...); }
+
+        std::function<void (Args...)> m_func;
     };
 
     template<class T>
@@ -78,6 +88,12 @@ void Signal<Args...>::connect(T *obj, void (T::*func)(Args...)) {
         Functor *f = new MemberFunctor<T>(obj, func);
         m_listeners.push_back(f);
     }
+}
+
+template<class... Args>
+void Signal<Args...>::connect(const std::function<void (Args...)> &func) {
+    Functor *f = new FunctionFunctor(func);
+    m_listeners.push_back(f);
 }
 
 template<class... Args> template<class T>
@@ -115,8 +131,8 @@ void Signal<Args...>::disconnect(T *obj) {
 template<class... Args> template<class T>
 bool Signal<Args...>::isConnected(T *obj, void (T::*func)(Args...)) {
     for (auto i = m_listeners.begin(); i != m_listeners.end(); ++i) {
-        MemberFunctor<T> *f = static_cast<MemberFunctor<T> *>(*i);
-        if (f->m_obj == obj && f->m_func == func) {
+        MemberFunctor<T> *f = dynamic_cast<MemberFunctor<T> *>(*i);
+        if (f && f->m_obj == obj && f->m_func == func) {
             return true;
         }
     }

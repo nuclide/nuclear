@@ -144,7 +144,7 @@ void ShellSeat::popup_grab_focus(struct weston_pointer_grab *grab)
     wl_fixed_t sx, sy;
     weston_view *view = weston_compositor_pick_view(pointer->seat->compositor, pointer->x, pointer->y, &sx, &sy);
 
-    if (view && wl_resource_get_client(view->surface->resource) == shseat->m_popupGrab.client) {
+    if (view && view->surface->resource && wl_resource_get_client(view->surface->resource) == shseat->m_popupGrab.client) {
         weston_pointer_set_focus(pointer, view, sx, sy);
     } else {
         weston_pointer_set_focus(pointer, NULL, wl_fixed_from_int(0), wl_fixed_from_int(0));

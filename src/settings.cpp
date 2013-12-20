@@ -185,6 +185,10 @@ Settings::Settings(const char *group)
 {
 }
 
+Settings::Settings()
+{
+}
+
 const Option *Settings::option(const std::string &name) const
 {
     auto it = m_options.find(name);
@@ -197,7 +201,10 @@ const Option *Settings::option(const std::string &name) const
 
 std::string Settings::path() const
 {
-    return m_group + "/" + m_name;
+    if (m_group != "") {
+        return m_group + "/" + m_name;
+    }
+    return m_name;
 }
 
 

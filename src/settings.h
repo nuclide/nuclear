@@ -134,6 +134,7 @@ class Settings
 {
 public:
     Settings(const char *group);
+    Settings();
     virtual ~Settings() {}
 
     virtual std::list<Option> options() const = 0;

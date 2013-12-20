@@ -292,11 +292,6 @@ void Shell::init()
     weston_compositor_add_button_binding(compositor(), BTN_LEFT, (weston_keyboard_modifier)0,
                                          [](struct weston_seat *seat, uint32_t time, uint32_t button, void *data) {
                                              static_cast<Shell *>(data)->activateSurface(seat, time, button); }, this);
-
-    weston_compositor_add_key_binding(compositor(), KEY_LEFT, MODIFIER_CTRL, [](struct weston_seat *seat, uint32_t time, uint32_t key, void *data) {
-                                            static_cast<Shell *>(data)->selectPreviousWorkspace(); }, this);
-    weston_compositor_add_key_binding(compositor(), KEY_RIGHT, MODIFIER_CTRL, [](struct weston_seat *seat, uint32_t time, uint32_t key, void *data) {
-                                            static_cast<Shell *>(data)->selectNextWorkspace(); }, this);
 }
 
 void Shell::setSplash(weston_view *view)

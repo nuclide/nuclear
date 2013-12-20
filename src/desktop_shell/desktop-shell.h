@@ -30,6 +30,7 @@ class XWlShell;
 class DesktopShellWorkspace;
 class Splash;
 class Client;
+class Binding;
 
 class DesktopShell : public Shell {
 public:
@@ -88,6 +89,12 @@ private:
     InputPanel *m_inputPanel;
     std::unordered_map<std::string, std::list<Client *>> m_trustedClients;
     Splash *m_splash;
+    Binding *m_moveBinding;
+    Binding *m_resizeBinding;
+    Binding *m_prevWsBinding;
+    Binding *m_nextWsBinding;
+
+    friend class DesktopShellSettings;
 };
 
 #endif

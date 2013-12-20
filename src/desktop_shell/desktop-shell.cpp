@@ -120,6 +120,10 @@ DesktopShell::~DesktopShell()
             delete c;
         }
     }
+    delete m_moveBinding;
+    delete m_resizeBinding;
+    delete m_prevWsBinding;
+    delete m_nextWsBinding;
 }
 
 void DesktopShell::init()
@@ -130,15 +134,18 @@ void DesktopShell::init()
         [](struct wl_client *client, void *data, uint32_t version, uint32_t id) { static_cast<DesktopShell *>(data)->bind(client, version, id); }))
         return;
 
-    weston_compositor_add_button_binding(compositor(), BTN_LEFT, MODIFIER_SUPER,
-                                         [](struct weston_seat *seat, uint32_t time, uint32_t button, void *data) {
-                                             static_cast<DesktopShell *>(data)->moveBinding(seat, time, button);
-                                         }, this);
-
-    weston_compositor_add_button_binding(compositor(), BTN_MIDDLE, MODIFIER_SUPER,
-                                         [](struct weston_seat *seat, uint32_t time, uint32_t button, void *data) {
-                                             static_cast<DesktopShell *>(data)->resizeBinding(seat, time, button);
-                                         }, this);
+    m_moveBinding = new Binding();
+    m_moveBinding->buttonTriggered.connect(this, &DesktopShell::moveBinding);
+    m_resizeBinding = new Binding();
+    m_resizeBinding->buttonTriggered.connect(this, &DesktopShell::resizeBinding);
+    m_prevWsBinding = new Binding();
+    m_prevWsBinding->keyTriggered.connect([this](weston_seat *seat, uint32_t time, uint32_t key) {
+        selectPreviousWorkspace();
+    });
+    m_nextWsBinding = new Binding();
+    m_nextWsBinding->keyTriggered.connect([this](weston_seat *seat, uint32_t time, uint32_t key) {
+        selectNextWorkspace();
+    });
 
     if (!wl_global_create(compositor()->wl_display, &desktop_shell_splash_interface, 1, this,
         [](wl_client *client, void *data, uint32_t version, uint32_t id) { static_cast<DesktopShell *>(data)->bindSplash(client, version, id); }))
@@ -930,3 +937,63 @@ module_init(struct weston_compositor *ec, int *argc, char *argv[])
 
     return 0;
 }
+
+
+class DesktopShellSettings : public Settings
+{
+public:
+    DesktopShellSettings()
+    {
+
+    }
+
+    ~DesktopShellSettings()
+    {
+
+    }
+
+    inline DesktopShell *shell() const
+    {
+        return static_cast<DesktopShell *>(Shell::instance());
+    }
+
+    virtual std::list<Option> options() const override
+    {
+        std::list<Option> list;
+        list.push_back(Option::binding("move_window", Binding::Type::Button));
+        list.push_back(Option::binding("resize_window", Binding::Type::Button));
+        list.push_back(Option::binding("previous_workspace", Binding::Type::Key));
+        list.push_back(Option::binding("next_workspace", Binding::Type::Key));
+        return list;
+    }
+
+    virtual void unSet(const std::string &name) override
+    {
+        if (name == "move_window") {
+            shell()->m_moveBinding->reset();
+        } else if (name == "resize_window") {
+            shell()->m_resizeBinding->reset();
+        } else if (name == "previous_workspace") {
+            shell()->m_prevWsBinding->reset();
+        } else if (name == "next_workspace") {
+            shell()->m_nextWsBinding->reset();
+        }
+    }
+
+    virtual void set(const std::string &name, const Option::BindingValue &v) override
+    {
+        if (name == "move_window") {
+            v.bind(shell()->m_moveBinding);
+        } else if (name == "resize_window") {
+            v.bind(shell()->m_resizeBinding);
+        } else if (name == "previous_workspace") {
+            v.bind(shell()->m_prevWsBinding);
+        } else if (name == "next_workspace") {
+            v.bind(shell()->m_nextWsBinding);
+        }
+    }
+
+private:
+};
+
+SETTINGS(desktop_shell, DesktopShellSettings)

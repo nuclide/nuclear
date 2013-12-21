@@ -22,6 +22,7 @@
 #include <sstream>
 #include <iostream>
 #include <signal.h>
+#include <unordered_set>
 
 #include "sessionmanager.h"
 
@@ -56,11 +57,18 @@ void SessionManager::restore()
     fclose(session);
 }
 
-void SessionManager::save(const std::list<pid_t> &pids)
+void SessionManager::save(const std::list<pid_t> &list)
 {
     FILE *session = fopen(m_sessionFile.c_str(), "w");
     if (!session) {
         return;
+    }
+
+    std::unordered_set<pid_t> pids;
+    for (pid_t pid: list) {
+        if (pids.find(pid) == pids.end()) {
+            pids.insert(pid);
+        }
     }
 
     char file[32];

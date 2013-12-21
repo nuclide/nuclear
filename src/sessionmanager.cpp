@@ -124,19 +124,19 @@ void SessionManager::start(const char *cmd)
 
     pid_t pid = fork();
     if (pid == 0) {
+        setsid();
+
+        sigset_t allsigs;
+        // do not give the signal mask set by weston to the new process
+        sigfillset(&allsigs);
+        sigprocmask(SIG_UNBLOCK, &allsigs, NULL);
+
         pid_t p2 = fork();
         if (p2 == 0) {
-            struct sigaction noaction;
-            memset(&noaction, 0, sizeof(noaction));
-            noaction.sa_handler = SIG_IGN;
-            sigaction(SIGPIPE, &noaction, 0);
-            setsid();
-
-            execvp(path, argv);
+            execv(path, argv);
             _exit(0);
         }
-
-        _exit(0);
+        _exit(1);
     }
 
     for (char *str: strings) {

@@ -73,6 +73,7 @@ void SessionManager::save(const std::list<pid_t> &list)
 
     char file[32];
     char buf[512];
+    char path[128];
 
     for (pid_t pid: pids) {
         sprintf(file, "/proc/%i/cmdline", pid);
@@ -86,6 +87,14 @@ void SessionManager::save(const std::list<pid_t> &list)
         }
         buf[size - 1] = '\n';
         buf[size] = '\0';
+
+        sprintf(file, "/proc/%i/exe", pid);
+        ssize_t ssize = readlink(file, path, sizeof(path));
+        if (ssize != -1) {
+            path[ssize] = '\0';
+            fputs(path, session);
+            fputs(" ", session);
+        }
 
         fputs(buf, session);
     }
@@ -106,8 +115,10 @@ void SessionManager::start(const char *cmd)
     const char *path = strings.front();
     char *argv[argc + 1];
     int i = 0;
-    for (char *str: strings) {
-        argv[i++] = str;
+    for (auto it = strings.begin(); it != strings.end(); ++it) {
+        if (it != strings.begin()) {
+            argv[i++] = *it;
+        }
     }
     argv[argc + 1] = nullptr;
 

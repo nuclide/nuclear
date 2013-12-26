@@ -52,6 +52,10 @@ wayland_add_protocol_server(SOURCES
     ${CMAKE_SOURCE_DIR}/protocol/settings.xml
     settings
 )
+wayland_add_protocol_server(SOURCES
+    ${CMAKE_SOURCE_DIR}/protocol/dropdown.xml
+    dropdown
+)
 
 add_library(nuclear-shell-common SHARED ${SOURCES})
 set_target_properties(nuclear-shell-common PROPERTIES COMPILE_DEFINITIONS WL_HIDE_DEPRECATED=1)
@@ -59,7 +63,8 @@ set_target_properties(nuclear-shell-common PROPERTIES COMPILE_DEFINITIONS WL_HID
 set(DESKTOP
     desktop_shell/desktopshellwindow.cpp
     desktop_shell/desktopshellworkspace.cpp
-    desktop_shell/desktop-shell.cpp)
+    desktop_shell/desktop-shell.cpp
+    desktop_shell/dropdown.cpp)
 
 add_library(nuclear-desktop-shell SHARED ${DESKTOP})
 set_target_properties(nuclear-desktop-shell PROPERTIES PREFIX "")

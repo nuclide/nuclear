@@ -145,6 +145,7 @@ public:
     void removeHotSpotBinding(Binding *b);
 
     void putInLimbo(ShellSurface *s);
+    void addStickyView(weston_view *w);
 
     virtual bool isTrusted(wl_client *client, const char *interface) const;
 
@@ -177,6 +178,7 @@ protected:
     Layer m_backgroundLayer;
     Layer m_panelsLayer;
     Layer m_fullscreenLayer;
+    Layer m_stickyLayer;
     Layer m_overlayLayer;
 
 private:

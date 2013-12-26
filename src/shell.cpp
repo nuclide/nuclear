@@ -271,7 +271,8 @@ void Shell::init()
     m_overlayLayer.insert(&m_splashLayer);
     m_fullscreenLayer.insert(&m_overlayLayer);
     m_panelsLayer.insert(&m_fullscreenLayer);
-    m_limboLayer.insert(&m_panelsLayer);
+    m_stickyLayer.insert(&m_panelsLayer);
+    m_limboLayer.insert(&m_stickyLayer);
     m_backgroundLayer.insert(&m_limboLayer);
 
     m_currentWorkspace = 0;
@@ -1035,6 +1036,11 @@ void Shell::removeHotSpotBinding(Binding *b)
 void Shell::putInLimbo(ShellSurface *s)
 {
     m_limboLayer.addSurface(s);
+}
+
+void Shell::addStickyView(weston_view *v)
+{
+    m_stickyLayer.addSurface(v);
 }
 
 bool Shell::isTrusted(wl_client *client, const char *interface) const

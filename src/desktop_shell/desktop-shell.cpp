@@ -43,6 +43,7 @@
 #include "settings.h"
 #include "settingsinterface.h"
 #include "sessionmanager.h"
+#include "dropdown.h"
 
 class Splash {
 public:
@@ -173,6 +174,7 @@ void DesktopShell::init()
     addInterface(wls);
     addInterface(new XWlShell);
     addInterface(new SettingsInterface);
+    addInterface(new Dropdown);
 
     m_inputPanel = new InputPanel(compositor()->wl_display);
     m_splash = new Splash;

@@ -1012,10 +1012,10 @@ void Shell::restoreWindows()
                     break;
                 }
             default:
+                shsurf->setAcceptNewState(true);
                 if (!shsurf->isMinimized()) {
                     shsurf->unminimize();
                 }
-                shsurf->setAcceptNewState(true);
         }
     }
     m_windowsMinimized = false;

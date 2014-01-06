@@ -94,6 +94,7 @@ private:
     Binding *m_resizeBinding;
     Binding *m_prevWsBinding;
     Binding *m_nextWsBinding;
+    Binding *m_quitBinding;
     SessionManager *m_sessionManager;
 
     friend class DesktopShellSettings;

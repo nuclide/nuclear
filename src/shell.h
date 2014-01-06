@@ -99,6 +99,7 @@ public:
     template<class T>
     static T *load(struct weston_compositor *ec, char *client);
     virtual ~Shell();
+    void quit();
 
     void launchShellProcess();
     virtual ShellSurface *createShellSurface(weston_surface *surface, const weston_shell_client *client);
@@ -152,7 +153,6 @@ public:
 protected:
     Shell(struct weston_compositor *ec);
     virtual void init();
-    void quit();
     inline const ShellSurfaceList &surfaces() const { return m_surfaces; }
     virtual void setGrabCursor(Cursor cursor) {}
     void addWorkspace(Workspace *ws);

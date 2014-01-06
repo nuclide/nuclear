@@ -128,6 +128,7 @@ DesktopShell::~DesktopShell()
     delete m_resizeBinding;
     delete m_prevWsBinding;
     delete m_nextWsBinding;
+    delete m_quitBinding;
 
     if (m_sessionManager) {
         std::list<pid_t> pids;
@@ -163,6 +164,10 @@ void DesktopShell::init()
     m_nextWsBinding = new Binding();
     m_nextWsBinding->keyTriggered.connect([this](weston_seat *seat, uint32_t time, uint32_t key) {
         selectNextWorkspace();
+    });
+    m_quitBinding = new Binding();
+    m_quitBinding->keyTriggered.connect([this](weston_seat *seat, uint32_t time, uint32_t key) {
+        Shell::quit();
     });
 
     if (!wl_global_create(compositor()->wl_display, &desktop_shell_splash_interface, 1, this,
@@ -993,6 +998,7 @@ public:
         list.push_back(Option::binding("resize_window", Binding::Type::Button));
         list.push_back(Option::binding("previous_workspace", Binding::Type::Key));
         list.push_back(Option::binding("next_workspace", Binding::Type::Key));
+        list.push_back(Option::binding("quit", Binding::Type::Key));
         return list;
     }
 
@@ -1006,6 +1012,8 @@ public:
             shell()->m_prevWsBinding->reset();
         } else if (name == "next_workspace") {
             shell()->m_nextWsBinding->reset();
+        } else if (name == "quit") {
+            shell()->m_quitBinding->reset();
         }
     }
 
@@ -1019,6 +1027,8 @@ public:
             v.bind(shell()->m_prevWsBinding);
         } else if (name == "next_workspace") {
             v.bind(shell()->m_nextWsBinding);
+        } else if (name == "quit") {
+            v.bind(shell()->m_quitBinding);
         }
     }
 

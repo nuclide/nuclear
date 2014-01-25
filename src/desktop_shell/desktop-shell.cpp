@@ -126,6 +126,7 @@ DesktopShell::~DesktopShell()
     }
     delete m_moveBinding;
     delete m_resizeBinding;
+    delete m_closeBinding;
     delete m_prevWsBinding;
     delete m_nextWsBinding;
     delete m_quitBinding;
@@ -157,6 +158,8 @@ void DesktopShell::init()
     m_moveBinding->buttonTriggered.connect(this, &DesktopShell::moveBinding);
     m_resizeBinding = new Binding();
     m_resizeBinding->buttonTriggered.connect(this, &DesktopShell::resizeBinding);
+    m_closeBinding = new Binding();
+    m_closeBinding->keyTriggered.connect(this, &DesktopShell::closeBinding);
     m_prevWsBinding = new Binding();
     m_prevWsBinding->keyTriggered.connect([this](weston_seat *seat, uint32_t time, uint32_t key) {
         selectPreviousWorkspace();
@@ -419,6 +422,21 @@ void DesktopShell::resizeBinding(weston_seat *seat, uint32_t time, uint32_t butt
 
         top->dragResize(seat, edges);
     }
+}
+
+void DesktopShell::closeBinding(weston_seat *seat, uint32_t time, uint32_t button)
+{
+    weston_surface *surface = weston_surface_get_main_surface(seat->keyboard->focus);
+    if (!surface) {
+        return;
+    }
+
+    ShellSurface *shsurf = getShellSurface(surface);
+    if (!shsurf || shsurf->type() == ShellSurface::Type::Fullscreen || shsurf->type() == ShellSurface::Type::Maximized) {
+        return;
+    }
+
+    shsurf->close();
 }
 
 void DesktopShell::setBackground(struct wl_client *client, struct wl_resource *resource, struct wl_resource *output_resource,
@@ -996,6 +1014,7 @@ public:
         std::list<Option> list;
         list.push_back(Option::binding("move_window", Binding::Type::Button));
         list.push_back(Option::binding("resize_window", Binding::Type::Button));
+        list.push_back(Option::binding("close_window", Binding::Type::Key));
         list.push_back(Option::binding("previous_workspace", Binding::Type::Key));
         list.push_back(Option::binding("next_workspace", Binding::Type::Key));
         list.push_back(Option::binding("quit", Binding::Type::Key));
@@ -1008,6 +1027,8 @@ public:
             shell()->m_moveBinding->reset();
         } else if (name == "resize_window") {
             shell()->m_resizeBinding->reset();
+        } else if (name == "close_window") {
+            shell()->m_closeBinding->reset();
         } else if (name == "previous_workspace") {
             shell()->m_prevWsBinding->reset();
         } else if (name == "next_workspace") {
@@ -1023,6 +1044,8 @@ public:
             v.bind(shell()->m_moveBinding);
         } else if (name == "resize_window") {
             v.bind(shell()->m_resizeBinding);
+        } else if (name == "close_window") {
+            v.bind(shell()->m_closeBinding);
         } else if (name == "previous_workspace") {
             v.bind(shell()->m_prevWsBinding);
         } else if (name == "next_workspace") {

@@ -55,6 +55,7 @@ private:
     void unbind(struct wl_resource *resource);
     void moveBinding(struct weston_seat *seat, uint32_t time, uint32_t button);
     void resizeBinding(struct weston_seat *seat, uint32_t time, uint32_t button);
+    void closeBinding(struct weston_seat *seat, uint32_t time, uint32_t button);
     void setBusyCursor(ShellSurface *shsurf, weston_seat *seat);
     void endBusyCursor(weston_seat *seat);
     void trustedClientDestroyed(void *client);
@@ -92,6 +93,7 @@ private:
     Splash *m_splash;
     Binding *m_moveBinding;
     Binding *m_resizeBinding;
+    Binding *m_closeBinding;
     Binding *m_prevWsBinding;
     Binding *m_nextWsBinding;
     Binding *m_quitBinding;

@@ -29,13 +29,16 @@
 class Instance
 {
 public:
-    Instance(wl_resource *res)
-        : m_resource(res)
+    Instance(Dropdown *dd, wl_resource *res)
+        : m_dropdown(dd)
+        , m_resource(res)
         , m_visible(false)
         , m_animValue(1.f)
     {
         wl_resource_set_implementation(m_resource, &s_implementation, this, [](wl_resource *res) {
-            delete static_cast<Instance *>(wl_resource_get_user_data(res));
+            Instance *in = static_cast<Instance *>(wl_resource_get_user_data(res));
+            in->m_dropdown->m_instances.remove(wl_resource_get_client(res));
+            delete in;
         });
 
         m_toggleBinding.keyTriggered.connect(this, &Instance::toggle);
@@ -108,6 +111,7 @@ public:
         weston_view_set_position(m_view, x, y);
     }
 
+    Dropdown *m_dropdown;
     wl_resource *m_resource;
     Binding m_toggleBinding;
     bool m_visible;
@@ -133,7 +137,13 @@ Dropdown::Dropdown()
 
 }
 
+std::list<wl_client *> Dropdown::boundClients() const
+{
+    return m_instances;
+}
+
 void Dropdown::bind(wl_client *client, uint32_t version, uint32_t id)
 {
-    new Instance(wl_resource_create(client, &nuclear_dropdown_interface, version, id));
+    new Instance(this, wl_resource_create(client, &nuclear_dropdown_interface, version, id));
+    m_instances.push_back(client);
 }

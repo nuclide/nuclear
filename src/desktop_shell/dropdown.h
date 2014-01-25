@@ -18,17 +18,27 @@
 #ifndef SCROLLDOWN_H
 #define SCROLLDOWN_H
 
+#include <list>
+
 #include <wayland-server.h>
 
 #include "interface.h"
+
+class Instance;
 
 class Dropdown : public Interface
 {
 public:
     Dropdown();
 
+    std::list<wl_client *> boundClients() const;
+
 private:
     void bind(wl_client *client, uint32_t version, uint32_t id);
+
+    std::list<wl_client *> m_instances;
+
+    friend Instance;
 };
 
 #endif

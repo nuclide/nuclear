@@ -142,6 +142,11 @@ DesktopShell::~DesktopShell()
                 pids.push_back(pid);
             }
         }
+        for (wl_client *c: findInterface<Dropdown>()->boundClients()) {
+            pid_t pid;
+            wl_client_get_credentials(c, &pid, nullptr, nullptr);
+            pids.push_back(pid);
+        }
         m_sessionManager->save(pids);
     }
 }

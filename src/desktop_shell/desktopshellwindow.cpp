@@ -116,9 +116,9 @@ void DesktopShellWindow::setState(wl_client *client, wl_resource *resource, int3
     ShellSurface *s = shsurf();
 
     if (m_state & DESKTOP_SHELL_WINDOW_STATE_MINIMIZED && !(state & DESKTOP_SHELL_WINDOW_STATE_MINIMIZED)) {
-        s->unminimize();
+        s->setMinimized(false);
     } else if (state & DESKTOP_SHELL_WINDOW_STATE_MINIMIZED && !(m_state & DESKTOP_SHELL_WINDOW_STATE_MINIMIZED)) {
-        s->minimize();
+        s->setMinimized(true);
         if (s->isActive()) {
             s->deactivate();
         }

@@ -117,6 +117,7 @@ public:
     void setActive(bool active);
     bool isActive() const;
     bool isMinimized() const;
+    void setMinimized(bool min);
     void setAcceptNewState(bool accept) { m_acceptState = accept; }
 
     void activate();

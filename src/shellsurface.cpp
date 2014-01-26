@@ -100,6 +100,16 @@ bool ShellSurface::isMinimized() const
     return m_minimized;
 }
 
+void ShellSurface::setMinimized(bool m)
+{
+    if (m_minimized == m) {
+        return;
+    }
+
+    m_minimized = m;
+    m ? minimize() : unminimize();
+}
+
 void ShellSurface::activate()
 {
     if (!m_acceptState) {

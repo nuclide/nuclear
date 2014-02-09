@@ -31,6 +31,8 @@ set(SOURCES
     xwlshell.cpp
     wl_shell/wlshell.cpp
     wl_shell/wlshellsurface.cpp
+    xdg_shell/xdgshell.cpp
+    xdg_shell/xdgsurface.cpp
     effects/scaleeffect.cpp
     effects/griddesktops.cpp
     effects/zoomeffect.cpp
@@ -56,6 +58,7 @@ wayland_add_protocol_server(SOURCES
     ${CMAKE_SOURCE_DIR}/protocol/dropdown.xml
     dropdown
 )
+wayland_add_protocol_server(SOURCES ${CMAKE_SOURCE_DIR}/protocol/xdg-shell.xml xdg-shell)
 
 add_library(nuclear-shell-common SHARED ${SOURCES})
 set_target_properties(nuclear-shell-common PROPERTIES COMPILE_DEFINITIONS WL_HIDE_DEPRECATED=1)

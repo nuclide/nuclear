@@ -36,6 +36,7 @@
 #include "workspace.h"
 #include "wl_shell/wlshell.h"
 #include "wl_shell/wlshellsurface.h"
+#include "xdg_shell/xdgshell.h"
 #include "xwlshell.h"
 #include "desktopshellwindow.h"
 #include "desktopshellworkspace.h"
@@ -188,6 +189,9 @@ void DesktopShell::init()
     addInterface(new XWlShell);
     addInterface(new SettingsInterface);
     addInterface(new Dropdown);
+    XdgShell *xdg = new XdgShell;
+    xdg->surfaceResponsivenessChangedSignal.connect(this, &DesktopShell::surfaceResponsivenessChanged);
+    addInterface(xdg);
 
     m_inputPanel = new InputPanel(compositor()->wl_display);
     m_splash = new Splash;

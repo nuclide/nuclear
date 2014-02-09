@@ -54,7 +54,7 @@ void DesktopShellWindow::mapped()
     }
 
     ShellSurface::Type type = shsurf()->type();
-    if (type == ShellSurface::Type::TopLevel || type == ShellSurface::Type::Maximized || type == ShellSurface::Type::Fullscreen) {
+    if (type == ShellSurface::Type::TopLevel) {
         create();
     }
 }
@@ -62,7 +62,7 @@ void DesktopShellWindow::mapped()
 void DesktopShellWindow::surfaceTypeChanged()
 {
     ShellSurface::Type type = shsurf()->type();
-    if (type == ShellSurface::Type::TopLevel || type == ShellSurface::Type::Maximized || type == ShellSurface::Type::Fullscreen) {
+    if (type == ShellSurface::Type::TopLevel) {
         if (!m_resource) {
             create();
         }

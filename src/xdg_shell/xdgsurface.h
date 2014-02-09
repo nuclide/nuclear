@@ -73,7 +73,8 @@ public:
     XdgSurface(XdgShell *xdgShell);
 
     void init(wl_client *client, uint32_t id);
-
+    void gainFocus();
+    void loseFocus();
     void sendPing(uint32_t serial) override;
 
 private:
@@ -91,6 +92,7 @@ private:
     void setMinimized(wl_client *client, wl_resource *resource);
 
     weston_output *m_output;
+    int m_focus;
 
     static const struct xdg_surface_interface s_implementation;
 };

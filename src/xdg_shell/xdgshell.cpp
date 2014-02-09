@@ -35,6 +35,7 @@ XdgShell::XdgShell()
     wl_list_for_each(seat, &Shell::compositor()->seat_list, link) {
         ShellSeat *shseat = ShellSeat::shellSeat(seat);
         shseat->pointerFocusSignal.connect(this, &XdgShell::pointerFocus);
+        shseat->keyboardFocusSignal.connect(this, &XdgShell::keyboardFocus);
     }
 }
 
@@ -131,6 +132,29 @@ void XdgShell::pointerFocus(ShellSeat *, weston_pointer *pointer)
     } else {
         uint32_t serial = wl_display_next_serial(Shell::compositor()->wl_display);
         xdg->ping(serial);
+    }
+}
+
+void XdgShell::keyboardFocus(ShellSeat *seat, weston_keyboard *keyboard)
+{
+    if (seat->currentKeyboardFocus()) {
+        ShellSurface *shsurf = Shell::getShellSurface(seat->currentKeyboardFocus());
+        if (shsurf) {
+            XdgSurface *xdg = shsurf->findInterface<XdgSurface>();
+            if (xdg) {
+                xdg->loseFocus();
+            }
+        }
+    }
+
+    if (keyboard->focus) {
+        ShellSurface *shsurf = Shell::getShellSurface(keyboard->focus);
+        if (shsurf) {
+            XdgSurface *xdg = shsurf->findInterface<XdgSurface>();
+            if (xdg) {
+                xdg->gainFocus();
+            }
+        }
     }
 }
 

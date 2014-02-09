@@ -26,6 +26,7 @@
 struct weston_surface;
 struct weston_seat;
 struct weston_pointer;
+struct weston_keyboard;
 
 class ShellSurface;
 class ShellSeat;
@@ -46,6 +47,7 @@ private:
                      wl_resource *seat, uint32_t serial, int32_t x, int32_t y, uint32_t flags);
 
     void pointerFocus(ShellSeat *seat, weston_pointer *pointer);
+    void keyboardFocus(ShellSeat *seat, weston_keyboard *keyboard);
     void surfaceResponsiveness(XdgBaseSurface *shsurf);
 
     static void sendConfigure(weston_surface *surface, uint32_t edges, int32_t width, int32_t height);

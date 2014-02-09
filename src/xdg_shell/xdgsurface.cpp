@@ -113,6 +113,7 @@ void XdgBaseSurface::pingTimeout()
 XdgSurface::XdgSurface(XdgShell *ws)
           : XdgBaseSurface(ws)
           , m_output(nullptr)
+          , m_focus(0)
 {
 }
 
@@ -125,6 +126,20 @@ void XdgSurface::init(wl_client *client, uint32_t id)
 void XdgSurface::sendPing(uint32_t serial)
 {
     xdg_surface_send_ping(m_resource, serial);
+}
+
+void XdgSurface::gainFocus()
+{
+    if (!m_focus++) {
+        xdg_surface_send_focused_set(m_resource);
+    }
+}
+
+void XdgSurface::loseFocus()
+{
+    if (!--m_focus) {
+        xdg_surface_send_focused_unset(m_resource);
+    }
 }
 
 void XdgSurface::destroy(wl_client *client, wl_resource *resource)

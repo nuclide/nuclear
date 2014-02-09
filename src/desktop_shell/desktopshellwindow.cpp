@@ -54,7 +54,7 @@ void DesktopShellWindow::mapped()
     }
 
     ShellSurface::Type type = shsurf()->type();
-    if (type == ShellSurface::Type::TopLevel) {
+    if (type == ShellSurface::Type::TopLevel && !shsurf()->isTransient()) {
         create();
     }
 }
@@ -62,7 +62,7 @@ void DesktopShellWindow::mapped()
 void DesktopShellWindow::surfaceTypeChanged()
 {
     ShellSurface::Type type = shsurf()->type();
-    if (type == ShellSurface::Type::TopLevel) {
+    if (type == ShellSurface::Type::TopLevel && !shsurf()->isTransient()) {
         if (!m_resource) {
             create();
         }

@@ -50,7 +50,7 @@ private:
     void keyboardFocus(ShellSeat *seat, weston_keyboard *keyboard);
     void surfaceResponsiveness(XdgBaseSurface *shsurf);
 
-    static void sendConfigure(weston_surface *surface, uint32_t edges, int32_t width, int32_t height);
+    static void sendConfigure(weston_surface *surface, int32_t width, int32_t height);
 
     static const struct xdg_shell_interface shell_implementation;
     static const struct weston_shell_client shell_client;

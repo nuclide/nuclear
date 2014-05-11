@@ -43,10 +43,10 @@ void WlShell::bind(wl_client *client, uint32_t version, uint32_t id)
         wl_resource_set_implementation(resource, &shell_implementation, this, nullptr);
 }
 
-void WlShell::sendConfigure(weston_surface *surface, uint32_t edges, int32_t width, int32_t height)
+void WlShell::sendConfigure(weston_surface *surface, int32_t width, int32_t height)
 {
     WlShellSurface *wlss = static_cast<WlShellSurface *>(surface->configure_private);
-    wl_shell_surface_send_configure(wlss->resource(), edges, width, height);
+    wl_shell_surface_send_configure(wlss->resource(), (uint32_t)wlss->shsurf()->resizeEdges(), width, height);
 }
 
 ShellSurface *WlShell::getShellSurface(wl_client *client, wl_resource *resource, uint32_t id, wl_resource *surface_resource)

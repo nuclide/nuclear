@@ -282,6 +282,7 @@ void ShellSurface::setTransient(struct weston_surface *parent, int x, int y, boo
     m_transient.inactive = inactive;
 
     m_nextState.transient = true;
+    m_type = Type::TopLevel;
     m_stateChanged = true;
 }
 

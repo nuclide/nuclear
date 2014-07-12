@@ -306,6 +306,11 @@ void ShellSurface::setClass(const char *c)
     m_class = c;
 }
 
+void ShellSurface::setMargins(int32_t left, int32_t right, int32_t top, int32_t bottom)
+{
+
+}
+
 void ShellSurface::mapPopup()
 {
     m_view->output = m_parent->output;

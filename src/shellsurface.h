@@ -113,6 +113,7 @@ public:
     void setTitle(const char *title);
     inline std::string title() const { return m_title; }
     void setClass(const char *c);
+    void setMargins(int32_t left, int32_t right, int32_t top, int32_t bottom);
 
     void dragMove(struct weston_seat *ws);
     void dragResize(weston_seat *ws, Edges edges);

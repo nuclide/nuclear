@@ -30,6 +30,7 @@ set(SOURCES
     sessionmanager.cpp
     screenshooter.cpp
     xwlshell.cpp
+    utils.cpp
     wl_shell/wlshell.cpp
     wl_shell/wlshellsurface.cpp
     xdg_shell/xdgshell.cpp

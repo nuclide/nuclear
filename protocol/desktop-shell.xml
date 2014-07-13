@@ -84,6 +84,14 @@
             <arg name="interface" type="string"/>
         </request>
 
+        <request name="pong">
+            <arg name="serial" type="uint"/>
+        </request>
+
+        <event name="ping">
+            <arg name="serial" type="uint"/>
+        </event>
+
         <event name="load"/>
 
         <!-- We'll fold most of wl_shell into this interface and then

@@ -1,5 +1,5 @@
 /*
- * Copyright 2013  Giulio Camuffo <giuliocamuffo@gmail.com>
+ * Copyright 2013-2014 Giulio Camuffo <giuliocamuffo@gmail.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -101,6 +101,22 @@ template<class R, class T, class... Args>
 constexpr static auto createWrapper(R (T::*func)(Args...)) -> Wrapper<R, T, Args...> {
     return Wrapper<R, T, Args...>();
 }
+
+class Timer {
+public:
+    Timer(int interval);
+    ~Timer();
+
+    void start();
+    void stop();
+    bool isRunning() const;
+
+    Signal<> triggered;
+
+private:
+    int m_interval;
+    wl_event_source *m_source;
+};
 
 #define wrapInterface(method) createWrapper(method).forward<method>
 

@@ -46,6 +46,7 @@
 #include "sessionmanager.h"
 #include "dropdown.h"
 #include "screenshooter.h"
+#include "signal.h"
 
 class Splash {
 public:
@@ -115,7 +116,9 @@ struct Client {
 DesktopShell::DesktopShell(struct weston_compositor *ec)
             : Shell(ec)
             , m_sessionManager(nullptr)
+            , m_pingTimer(500)
 {
+    m_pingTimer.triggered.connect(this, &DesktopShell::pingTimerTimeout);
 }
 
 DesktopShell::~DesktopShell()
@@ -160,6 +163,12 @@ void DesktopShell::init()
     if (!wl_global_create(compositor()->wl_display, &desktop_shell_interface, 1, this,
         [](struct wl_client *client, void *data, uint32_t version, uint32_t id) { static_cast<DesktopShell *>(data)->bind(client, version, id); }))
         return;
+
+    weston_seat *seat;
+    wl_list_for_each(seat, &compositor()->seat_list, link) {
+        ShellSeat *shseat = ShellSeat::shellSeat(seat);
+        shseat->pointerMotionSignal.connect(this, &DesktopShell::pointerMotion);
+    }
 
     m_moveBinding = new Binding();
     m_moveBinding->buttonTriggered.connect(this, &DesktopShell::moveBinding);
@@ -289,6 +298,27 @@ void DesktopShell::trustedClientDestroyed(void *data)
             }
         }
     }
+}
+
+void DesktopShell::pointerMotion(ShellSeat *seat, weston_pointer *pointer)
+{
+    if (!m_child.desktop_shell || m_pingTimer.isRunning()) {
+        return;
+    }
+
+    wl_display *display = wl_client_get_display(shellClient());
+    m_pingSerial = wl_display_next_serial(display);
+    m_pingTimer.start();
+
+    desktop_shell_send_ping(m_child.desktop_shell, m_pingSerial);
+    wl_client_flush(shellClient());
+}
+
+void DesktopShell::pingTimerTimeout()
+{
+    printf("The shell client is unresponsive, restarting it...\n");
+    m_pingTimer.stop();
+    wl_client_destroy(m_child.client);
 }
 
 void DesktopShell::sendInitEvents()
@@ -926,6 +956,17 @@ void DesktopShell::addTrustedClient(wl_client *client, wl_resource *resource, in
     m_trustedClients[interface].push_back(cl);
 }
 
+void DesktopShell::pong(uint32_t serial)
+{
+    if (!m_pingTimer.isRunning())
+        /* Just ignore unsolicited pong. */
+        return;
+
+    if (m_pingSerial == serial) {
+        m_pingTimer.stop();
+    }
+}
+
 const struct desktop_shell_interface DesktopShell::m_desktop_shell_implementation = {
     wrapInterface(&DesktopShell::setBackground),
     wrapInterface(&DesktopShell::setPanel),
@@ -942,7 +983,8 @@ const struct desktop_shell_interface DesktopShell::m_desktop_shell_implementatio
     wrapInterface(&DesktopShell::addWorkspace),
     wrapInterface(&DesktopShell::selectWorkspace),
     wrapInterface(&DesktopShell::quit),
-    wrapInterface(&DesktopShell::addTrustedClient)
+    wrapInterface(&DesktopShell::addTrustedClient),
+    wrapInterface(&DesktopShell::pong)
 };
 
 void DesktopShell::setSplashSurface(wl_client *client, wl_resource *resource, wl_resource *output_resource, wl_resource *surface_resource)

@@ -45,12 +45,14 @@ public:
     weston_surface *currentKeyboardFocus() const;
 
     Signal<ShellSeat *, struct weston_pointer *> pointerFocusSignal;
+    Signal<ShellSeat *, weston_pointer *> pointerMotionSignal;
     Signal<ShellSeat *, weston_keyboard *> keyboardFocusSignal;
 
 private:
     ShellSeat(struct weston_seat *seat);
     static void seatDestroyed(struct wl_listener *listener, void *data);
     static void pointerFocus(struct wl_listener *listener, void *data);
+    static void pointerMotion(wl_listener *listener, void *data);
     static void keyboardFocus(wl_listener *listener, void *data);
 
     struct weston_seat *m_seat;
@@ -60,6 +62,7 @@ private:
         ShellSeat *seat;
         struct wl_listener seatDestroy;
         struct wl_listener pointerFocus;
+        wl_listener pointerMotion;
         wl_listener keyboardFocus;
     } m_listeners;
 

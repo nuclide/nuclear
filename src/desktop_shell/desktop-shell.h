@@ -59,6 +59,8 @@ private:
     void setBusyCursor(ShellSurface *shsurf, weston_seat *seat);
     void endBusyCursor(weston_seat *seat);
     void trustedClientDestroyed(void *client);
+    void pointerMotion(ShellSeat *seat, weston_pointer *pointer);
+    void pingTimerTimeout();
 
     void setBackground(struct wl_client *client, struct wl_resource *resource, struct wl_resource *output_resource,
                                              struct wl_resource *surface_resource);
@@ -75,6 +77,7 @@ private:
     void selectWorkspace(wl_client *client, wl_resource *resource, wl_resource *workspace_resource);
     void quit(wl_client *client, wl_resource *resource);
     void addTrustedClient(wl_client *client, wl_resource *resource, int32_t fd, const char *interface);
+    void pong(uint32_t serial);
     void setSplashSurface(wl_client *client, wl_resource *resource, wl_resource *output_resource, wl_resource *surface_resource);
 
     static void configurePopup(weston_surface *es, int32_t sx, int32_t sy);
@@ -98,6 +101,8 @@ private:
     Binding *m_nextWsBinding;
     Binding *m_quitBinding;
     SessionManager *m_sessionManager;
+    Timer m_pingTimer;
+    uint32_t m_pingSerial;
 
     friend class DesktopShellSettings;
     friend int module_init(weston_compositor *ec, int *argc, char *argv[]);

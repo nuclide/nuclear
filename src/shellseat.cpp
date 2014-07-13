@@ -76,8 +76,11 @@ ShellSeat::ShellSeat(struct weston_seat *seat)
     if (seat->pointer) {
         m_listeners.pointerFocus.notify = pointerFocus;
         wl_signal_add(&seat->pointer->focus_signal, &m_listeners.pointerFocus);
+        m_listeners.pointerMotion.notify = pointerMotion;
+        wl_signal_add(&seat->pointer->motion_signal, &m_listeners.pointerMotion);
     } else {
         wl_list_init(&m_listeners.pointerFocus.link);
+        wl_list_init(&m_listeners.pointerMotion.link);
     }
     if (seat->keyboard) {
         m_listeners.keyboardFocus.notify = keyboardFocus;
@@ -94,6 +97,7 @@ ShellSeat::~ShellSeat()
     }
     wl_list_remove(&m_listeners.seatDestroy.link);
     wl_list_remove(&m_listeners.pointerFocus.link);
+    wl_list_remove(&m_listeners.pointerMotion.link);
     wl_list_remove(&m_listeners.keyboardFocus.link);
 }
 
@@ -147,6 +151,13 @@ void ShellSeat::pointerFocus(struct wl_listener *listener, void *data)
     ShellSeat *shseat = static_cast<Wrapper *>(container_of(listener, Wrapper, pointerFocus))->seat;
     struct weston_pointer *pointer = static_cast<weston_pointer *>(data);
     shseat->pointerFocusSignal(shseat, pointer);
+}
+
+void ShellSeat::pointerMotion(wl_listener *listener, void *data)
+{
+    ShellSeat *shseat = static_cast<Wrapper *>(container_of(listener, Wrapper, pointerMotion))->seat;
+    weston_pointer *pointer = static_cast<weston_pointer *>(data);
+    shseat->pointerMotionSignal(shseat, pointer);
 }
 
 void ShellSeat::keyboardFocus(wl_listener *listener, void *data)

@@ -97,7 +97,7 @@ struct DGrab : public ShellGrab {
             int ws = 0;
             for (int i = 0; i < numWs; ++i) {
                 Workspace *w = Shell::instance()->workspace(i);
-                if (w->boundingBox().contains(x, y)) {
+                if (w->boundingBox(Shell::instance()->outputAt(x, y)).contains(x, y)) {
                     ws = i;
                     break;
                 }
@@ -110,7 +110,7 @@ struct DGrab : public ShellGrab {
 
                 float x = wl_fixed_to_int(pointer()->x + dx);
                 float y = wl_fixed_to_int(pointer()->y + dy);
-                IRect2D bbox = w->boundingBox();
+                IRect2D bbox = w->boundingBox(Shell::instance()->outputAt(x, y));
                 surface->setPosition((int)((x - bbox.x) / scale) , (int)((y - bbox.y) / scale));
                 surface->moveEndSignal(surface);
                 unsetCursor();

@@ -150,6 +150,8 @@ public:
 
     virtual bool isTrusted(wl_client *client, const char *interface) const;
 
+    weston_output *outputAt(int x, int y) const;
+
 protected:
     Shell(struct weston_compositor *ec);
     virtual void init();
@@ -206,7 +208,7 @@ private:
     uint32_t m_currentWorkspace;
     bool m_windowsMinimized;
     bool m_quitting;
-    weston_surface *m_background;
+    std::unordered_map<weston_output *, weston_surface *> m_backgrounds;
 
     std::unordered_map<int, std::list<Binding *>> m_hotSpotBindings;
     uint32_t m_lastMotionTime;

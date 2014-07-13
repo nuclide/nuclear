@@ -23,7 +23,6 @@
 Workspace::Workspace(Shell *shell, int number)
          : m_shell(shell)
          , m_number(number)
-         , m_background(nullptr)
          , m_active(false)
 {
     int x = 0, y = 0;
@@ -43,8 +42,6 @@ Workspace::Workspace(Shell *shell, int number)
     pixman_region32_init_rect(&s->input, 0, 0, w, h);
 
     m_layer.addSurface(m_rootSurface);
-
-    m_backgroundDestroy.signal->connect(this, &Workspace::backgroundDestroyed);
 }
 
 Workspace::~Workspace()
@@ -61,28 +58,51 @@ Workspace::~Workspace()
 
     remove();
     destroyedSignal(this);
-    weston_view_destroy(m_background);
+    for (auto &i: m_outputs) {
+        delete i.second;
+    }
     weston_surface_destroy(m_rootSurface->surface);
 }
 
-void Workspace::createBackgroundView(weston_surface *bkg)
+void Workspace::createBackgroundView(weston_surface *bkg, weston_output *output)
 {
-    if (m_background && m_background->surface != bkg) {
-        weston_view_destroy(m_background);
+    Output *out = nullptr;
+    if (m_outputs.count(output)) {
+        out = m_outputs.at(output);
+        if (out->background && out->background->surface != bkg) {
+            weston_view_destroy(out->background);
+            out->background = nullptr;
+        }
     }
 
-    m_background = weston_view_create(bkg);
-    m_backgroundDestroy.listen(&m_background->destroy_signal);
-    weston_view_set_position(m_background, 0, 0);
-    m_backgroundLayer.addSurface(m_background);
-    weston_view_set_transform_parent(m_background, m_rootSurface);
+    if (!out) {
+        out = new Output;
+        out->backgroundDestroy.signal->connect(this, &Workspace::backgroundDestroyed);
+        m_outputs[output] = out;
+    }
+
+    weston_view *view = weston_view_create(bkg);
+    out->background = view;
+    out->backgroundDestroy.listen(&view->destroy_signal);
+    weston_view_set_position(view, output->x, output->y);
+    m_backgroundLayer.addSurface(view);
+    weston_view_set_transform_parent(view, m_rootSurface);
 }
 
 void Workspace::backgroundDestroyed(void *d)
 {
-    if (d == m_background) {
-        m_background = nullptr;
-        m_backgroundDestroy.reset();
+    weston_view *view = static_cast<weston_view *>(d);
+    for (auto i = m_outputs.begin(); i != m_outputs.end(); ++i) {
+        Output *out = i->second;
+        if (out->background != view) {
+            continue;
+        }
+
+        out->background = nullptr;
+        out->backgroundDestroy.reset();
+        delete out;
+        m_outputs.erase(i);
+        break;
     }
 }
 
@@ -124,9 +144,10 @@ void Workspace::setTransform(const Transform &tr)
     weston_surface_damage(m_rootSurface->surface);
 }
 
-IRect2D Workspace::boundingBox() const
+IRect2D Workspace::boundingBox(weston_output *out) const
 {
-    pixman_box32_t *box = pixman_region32_extents(&m_background->transform.boundingbox);
+    Output *o = m_outputs.at(out);
+    pixman_box32_t *box = pixman_region32_extents(&o->background->transform.boundingbox);
     IRect2D rect(box->x1, box->y1, box->x2 - box->x1, box->y2 - box->y1);
 
     return rect;

@@ -18,6 +18,8 @@
 #ifndef WORKSPACE_H
 #define WORKSPACE_H
 
+#include <unordered_map>
+
 #include "layer.h"
 #include "transform.h"
 #include "shellsignal.h"
@@ -34,7 +36,7 @@ public:
     Workspace(Shell *shell, int number);
     ~Workspace();
 
-    void createBackgroundView(weston_surface *bkg);
+    void createBackgroundView(weston_surface *bkg, weston_output *output);
 
     void addSurface(ShellSurface *surface);
     void removeSurface(ShellSurface *surface);
@@ -42,7 +44,7 @@ public:
     void stackAbove(weston_view *surf, weston_view *parent);
 
     void setTransform(const Transform &tr);
-    IRect2D boundingBox() const;
+    IRect2D boundingBox(weston_output *out) const;
 
     inline int number() const { return m_number; }
     int numberOfSurfaces() const;
@@ -64,15 +66,19 @@ public:
 private:
     void backgroundDestroyed(void *d);
 
+    struct Output {
+        weston_view *background;
+        WlListener backgroundDestroy;
+    };
+
     Shell *m_shell;
     int m_number;
     weston_view *m_rootSurface;
-    weston_view *m_background;
+    std::unordered_map<weston_output *, Output *> m_outputs;
     Transform m_transform;
     Layer m_backgroundLayer;
     Layer m_layer;
     bool m_active;
-    WlListener m_backgroundDestroy;
 };
 
 #endif

@@ -231,7 +231,6 @@ Shell::Shell(struct weston_compositor *ec)
             : m_compositor(ec)
             , m_windowsMinimized(false)
             , m_quitting(false)
-            , m_background(nullptr)
             , m_lastMotionTime(0)
             , m_enterHotZone(0)
             , m_grabView(nullptr)
@@ -306,8 +305,8 @@ void Shell::setSplash(weston_view *view)
 
 void Shell::addWorkspace(Workspace *ws)
 {
-    if (m_background) {
-        ws->createBackgroundView(m_background);
+    for (auto &i: m_backgrounds) {
+        ws->createBackgroundView(i.second, i.first);
     }
     m_workspaces.push_back(ws);
     ws->destroyedSignal.connect(this, &Shell::workspaceRemoved);
@@ -768,10 +767,10 @@ void Shell::setBackgroundSurface(struct weston_surface *surface, struct weston_o
         static_cast<Shell *>(es->configure_private)->backgroundConfigure(es, sx, sy); };
     surface->configure_private = this;
     surface->output = output;
-    m_background = surface;
+    m_backgrounds[output] = surface;
 
     for (Workspace *w: m_workspaces) {
-        w->createBackgroundView(surface);
+        w->createBackgroundView(surface, output);
     }
 }
 
@@ -1062,6 +1061,18 @@ void Shell::addStickyView(weston_view *v)
 bool Shell::isTrusted(wl_client *client, const char *interface) const
 {
     return client == m_child.client;
+}
+
+weston_output *Shell::outputAt(int x, int y) const
+{
+    weston_output *output;
+    wl_list_for_each(output, &compositor()->output_list, link) {
+        if (pixman_region32_contains_point(&output->region, x, y, nullptr)) {
+            return output;
+        }
+    }
+
+    return nullptr;
 }
 
 void Shell::sigchld(int status)

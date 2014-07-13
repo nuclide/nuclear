@@ -22,6 +22,7 @@
 
 #include "interface.h"
 #include "shellsignal.h"
+#include "utils.h"
 
 struct wl_resource;
 struct wl_client;
@@ -54,7 +55,6 @@ protected:
     wl_resource *m_resource;
 
 private:
-    void destroyPingTimer();
     void pingTimeout();
 
     struct PingTimer {
@@ -63,7 +63,8 @@ private:
     };
 
     XdgShell *m_xdgShell;
-    PingTimer *m_pingTimer;
+    Timer m_pingTimer;
+    uint32_t m_pingSerial;
     bool m_unresponsive;
 };
 

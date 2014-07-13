@@ -22,6 +22,7 @@
 
 #include "interface.h"
 #include "shellsignal.h"
+#include "utils.h"
 
 struct wl_resource;
 struct wl_client;
@@ -58,18 +59,14 @@ private:
     void setClass(wl_client *client, wl_resource *resource, const char *className);
 
     void resourceDestroyed();
-    void destroyPingTimer();
     void pingTimeout();
     void popupDone();
 
     WlShell *m_wlShell;
     wl_resource *m_resource;
 
-    struct PingTimer {
-        wl_event_source *source;
-        uint32_t serial;
-    };
-    PingTimer *m_pingTimer;
+    Timer m_pingTimer;
+    uint32_t m_pingSerial;
     bool m_unresponsive;
 
     static const struct wl_shell_surface_interface s_shellSurfaceImplementation;

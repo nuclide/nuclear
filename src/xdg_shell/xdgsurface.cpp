@@ -21,17 +21,19 @@
 #include "shell.h"
 #include "wayland-xdg-shell-server-protocol.h"
 
+static const int ping_timeout = 200;
+
 XdgBaseSurface::XdgBaseSurface(XdgShell *ws)
           : m_resource(nullptr)
           , m_xdgShell(ws)
-          , m_pingTimer(nullptr)
+          , m_pingTimer(ping_timeout)
           , m_unresponsive(false)
 {
+    m_pingTimer.triggered.connect(this, &XdgBaseSurface::pingTimeout);
 }
 
 XdgBaseSurface::~XdgBaseSurface()
 {
-    destroyPingTimer();
     if (m_resource && wl_resource_get_client(m_resource)) {
         wl_resource_set_destructor(m_resource, nullptr);
         wl_resource_destroy(m_resource);
@@ -56,48 +58,29 @@ bool XdgBaseSurface::isResponsive() const
 
 void XdgBaseSurface::ping(uint32_t serial)
 {
-    const int ping_timeout = 200;
-
     if (!m_resource || !wl_resource_get_client(m_resource))
         return;
 
-    if (!m_pingTimer) {
-        m_pingTimer = new PingTimer;
-        if (!m_pingTimer)
-            return;
-
-        m_pingTimer->serial = serial;
-        wl_event_loop *loop = wl_display_get_event_loop(Shell::compositor()->wl_display);
-        m_pingTimer->source = wl_event_loop_add_timer(loop, [](void *data)
-                                                     { static_cast<XdgBaseSurface *>(data)->pingTimeout(); return 1; }, this);
-        wl_event_source_timer_update(m_pingTimer->source, ping_timeout);
-
+    if (!m_pingTimer.isRunning()) {
+        m_pingTimer.start();
+        m_pingSerial = serial;
         wl_shell_surface_send_ping(m_resource, serial);
     }
 }
 
 void XdgBaseSurface::pong(uint32_t serial)
 {
-    if (!m_pingTimer)
+    if (!m_pingTimer.isRunning())
         /* Just ignore unsolicited pong. */
         return;
 
-    if (m_pingTimer->serial == serial) {
-        destroyPingTimer();
+    if (m_pingSerial == serial) {
+        m_pingTimer.stop();
         if (m_unresponsive) {
             m_unresponsive = false;
             responsivenessChangedSignal(this);
         }
     }
-}
-
-void XdgBaseSurface::destroyPingTimer()
-{
-    if (m_pingTimer && m_pingTimer->source)
-        wl_event_source_remove(m_pingTimer->source);
-
-    delete m_pingTimer;
-    m_pingTimer = nullptr;
 }
 
 void XdgBaseSurface::pingTimeout()

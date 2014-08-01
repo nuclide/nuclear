@@ -120,7 +120,7 @@ void Workspace::removeSurface(ShellSurface *surface)
     if (surface->transformParent() == m_rootSurface) {
         weston_view_set_transform_parent(surface->view(), nullptr);
     }
-    wl_list_remove(&surface->view()->layer_link);
+    weston_layer_entry_remove(&surface->view()->layer_link);
     surface->m_workspace = nullptr;
 }
 

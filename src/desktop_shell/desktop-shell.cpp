@@ -741,7 +741,7 @@ void DesktopShell::configurePopup(weston_surface *es, int32_t sx, int32_t sy)
     weston_view *view = container_of(es->views.next, weston_view, surface_link);
     weston_view_set_position(view, p->parent->geometry.x + p->x, p->parent->geometry.y + p->y);
 
-    if (wl_list_empty(&view->layer_link) || view->layer_link.next == view->layer_link.prev) {
+    if (wl_list_empty(&view->layer_link.link) || view->layer_link.link.next == view->layer_link.link.prev) {
         layer->addSurface(view);
         weston_compositor_schedule_repaint(es->compositor);
     }

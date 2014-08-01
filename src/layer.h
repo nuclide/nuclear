@@ -121,7 +121,7 @@ template<class L, class S>
 S *Layer::Iterator<L, S>::deref() const
 {
     if (m_elm) {
-        return container_of(m_elm, weston_view, layer_link);
+        return container_of(m_elm, weston_view, layer_link.link);
     } else {
         return nullptr;
     }

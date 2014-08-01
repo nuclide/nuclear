@@ -114,6 +114,7 @@ public:
     inline std::string title() const { return m_title; }
     void setClass(const char *c);
     void setMargins(int32_t left, int32_t right, int32_t top, int32_t bottom);
+    void setGeometry(int32_t x, int32_t y, int32_t w, int32_t h);
 
     void dragMove(struct weston_seat *ws);
     void dragResize(weston_seat *ws, Edges edges);

@@ -161,8 +161,7 @@ void ShellSurface::show()
 
 void ShellSurface::hide()
 {
-    wl_list_remove(&m_view->layer_link);
-    wl_list_init(&m_view->layer_link);
+    weston_layer_entry_remove(&m_view->layer_link);
 }
 
 bool ShellSurface::updateType()
@@ -308,6 +307,11 @@ void ShellSurface::setClass(const char *c)
 }
 
 void ShellSurface::setMargins(int32_t left, int32_t right, int32_t top, int32_t bottom)
+{
+
+}
+
+void ShellSurface::setGeometry(int32_t x, int32_t y, int32_t w, int32_t h)
 {
 
 }

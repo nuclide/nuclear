@@ -429,7 +429,8 @@ void Shell::configureSurface(ShellSurface *surface, int32_t sx, int32_t sy)
                 surface->m_workspace = 0;
             }
             surface->view()->output = surface->m_parent->output;
-            wl_list_insert(defaultView(surface->m_parent)->layer_link.prev, &surface->view()->layer_link);
+            weston_layer_entry *prev = container_of(defaultView(surface->m_parent)->layer_link.link.prev, struct weston_layer_entry, link);
+            weston_layer_entry_insert(prev, &surface->view()->layer_link);
         } else if (surface->m_type == ShellSurface::Type::TopLevel && surface->m_state.fullscreen) {
             stackFullscreen(surface);
             configureFullscreen(surface);
@@ -717,7 +718,7 @@ static void configure_static_surface(struct weston_surface *es, Layer *layer)
 
     weston_view_set_position(view, view->geometry.x, view->geometry.y);
 
-    if (wl_list_empty(&view->layer_link) || view->layer_link.next == view->layer_link.prev) {
+    if (wl_list_empty(&view->layer_link.link) || view->layer_link.link.next == view->layer_link.link.prev) {
         layer->addSurface(view);
         weston_compositor_schedule_repaint(es->compositor);
     }
@@ -755,7 +756,7 @@ void Shell::panelConfigure(weston_surface *es, int32_t sx, int32_t sy, PanelPosi
     }
     weston_view_set_position(view, x, y);
 
-    if (wl_list_empty(&view->layer_link) || view->layer_link.next == view->layer_link.prev) {
+    if (wl_list_empty(&view->layer_link.link) || view->layer_link.link.next == view->layer_link.link.prev) {
         m_panelsLayer.addSurface(view);
         weston_compositor_schedule_repaint(es->compositor);
     }

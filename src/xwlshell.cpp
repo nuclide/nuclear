@@ -36,7 +36,7 @@ XWlShell::XWlShell()
     compositor->shell_interface.move = [](shell_surface *shsurf, weston_seat *ws) { _this->dragMove(ws); return 0; };
     compositor->shell_interface.set_xwayland = [](shell_surface *shsurf, int x, int y, uint32_t flags) { _this->setXWayland(x, y, flags & WL_SHELL_SURFACE_TRANSIENT_INACTIVE); };
     compositor->shell_interface.set_title = [](shell_surface *shsurf, const char *t) { _this->setTitle(t); };
-    compositor->shell_interface.set_margin = [](shell_surface *shsurf, int32_t l, int32_t r, int32_t t, int32_t b) { _this->setMargins(l, r, t, b); };
+    compositor->shell_interface.set_window_geometry = [](shell_surface *shsurf, int32_t x, int32_t y, int32_t w, int32_t h) { _this->setGeometry(x, y, w, h); };
 #undef _this
 }
 

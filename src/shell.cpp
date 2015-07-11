@@ -401,7 +401,7 @@ void Shell::configureSurface(ShellSurface *surface, int32_t sx, int32_t sy)
 
     if (surface->m_type == ShellSurface::Type::TopLevel && surface->m_state.fullscreen && !surface->m_nextState.fullscreen) {
         if (surface->m_fullscreen.type == ShellSurface::FullscreenMethod::Driver && surfaceIsTopFullscreen(surface)) {
-            weston_output_switch_mode(surface->m_fullscreen.output, surface->m_fullscreen.output->original_mode, surface->m_fullscreen.output->original_scale, WESTON_MODE_SWITCH_RESTORE_NATIVE);
+            weston_output_mode_switch_to_native(surface->m_fullscreen.output);
         }
     }
     bool changedType = surface->updateType();
@@ -594,7 +594,7 @@ void Shell::configureFullscreen(ShellSurface *shsurf)
             int32_t scale = surface->buffer_viewport.buffer.scale;
             weston_mode mode = {0, bbox.width * scale, bbox.height * scale, shsurf->m_fullscreen.framerate, { nullptr, nullptr } };
 
-            if (weston_output_switch_mode(output, &mode, scale, WESTON_MODE_SWITCH_SET_TEMPORARY) == 0) {
+            if (weston_output_mode_switch_to_temporary(output, &mode, scale) == 0) {
                 weston_view_set_position(view, output->x - bbox.x, output->y - bbox.y);
                 shsurf->m_fullscreen.blackView->surface->width = output->width;
                 shsurf->m_fullscreen.blackView->surface->height = output->height;
